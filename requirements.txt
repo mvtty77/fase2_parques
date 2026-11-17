@@ -1,0 +1,11 @@
+# Versiones exactas con las que se probó el proyecto (Python 3.12, MySQL 8.0.46)
+# Faker fijo: con la misma versión y semilla los datos generados son idénticos.
+streamlit==1.67.0
+SQLAlchemy==2.1.8
+PyMySQL==1.2.4
+cryptography==50.0.2   # PyMySQL lo necesita para caching_sha2_password (MySQL 8)
+pandas==3.0.6
+plotly==7.1.0
+numpy==2.5.4
+Faker==40.54.0
+pytest==9.2.0

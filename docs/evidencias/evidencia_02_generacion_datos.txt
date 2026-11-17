@@ -1,0 +1,36 @@
+# Evidencia 02 · Generación de datos (2026-11-11 01:36:03)
+$ python scripts/generar_datos.py
+Tabla                     Filas
+REGION                       10
+PARQUE                       16
+PARQUE_REGION                18
+AREA                         49
+PERSONA                     288
+PERSONA_TELEFONO            317
+TRABAJADOR                   60
+TRABAJADOR_FUNCION           97
+ASIGNACION_TRABAJADOR       171
+VISITANTE                   240
+CUENTA                       50
+CUENTA_ROL                   57
+RECURSO_NATURAL              98
+VEGETAL                      34
+ANIMAL                       32
+MINERAL                      20
+INVENTARIO_RECURSO          435
+PROYECTO_CIENTIFICO          30
+PARTICIPA_PROYECTO          113
+ESTUDIA                      59
+INVESTIGA                   120
+EXCURSION                   200
+INSCRIPCION                1363
+EVALUACION                  604
+Validaciones previas: OK
+SQL escrito en /home/claude/proyecto/sql/02_datos.sql
+
+MD5 02_datos.sql antes:   69638522323543fea8f0fc5e62a4d19b
+MD5 02_datos.sql después: 69638522323543fea8f0fc5e62a4d19b
+(iguales = generación reproducible con semilla 2026)
+
+$ python scripts/construir_integral.py
+Escrito /home/claude/proyecto/sql/00_integral.sql (328 KB)

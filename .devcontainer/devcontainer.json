@@ -1,0 +1,42 @@
+{
+  // Codespace del Grupo 1 · Caso 1 · TDFI103 Fase 2
+  // Ubuntu 24.04 + MySQL 8.0 + Python 3.12 instalados directamente (SIN Docker Compose).
+  // Al crearse instala todo (instalar.sh); cada vez que se inicia enciende MySQL,
+  // crea la base si no existe y abre el PMV Streamlit (iniciar.sh).
+  "name": "Parques Naturales · Grupo 1 Fase 2",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "hostRequirements": { "cpus": 2, "memory": "4gb" },
+  "postCreateCommand": "bash .devcontainer/instalar.sh",
+  "postStartCommand": "bash .devcontainer/iniciar.sh",
+  "forwardPorts": [8501],
+  "portsAttributes": {
+    "8501": { "label": "PMV Streamlit", "onAutoForward": "openBrowser" },
+    "3306": { "label": "MySQL", "onAutoForward": "silent" }
+  },
+  "containerEnv": { "TZ": "America/Santiago" },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-mysql"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/home/vscode/.venv/bin/python",
+        "python.terminal.activateEnvironment": true,
+        "files.eol": "\n",
+        "sqltools.connections": [
+          {
+            "name": "parques_db (Codespace)",
+            "driver": "MySQL",
+            "server": "127.0.0.1",
+            "port": 3306,
+            "database": "parques_db",
+            "username": "parques_app",
+            "askForPassword": true
+          }
+        ]
+      }
+    }
+  }
+}

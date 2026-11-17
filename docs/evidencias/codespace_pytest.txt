@@ -1,0 +1,22 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.18, pytest-9.2.0, pluggy-1.7.0 -- /home/vscode/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/vscode/ws/fase2-parques-grupo1
+plugins: Faker-40.54.0, anyio-4.16.0
+collecting ... collected 13 items
+
+tests/test_negocio.py::test_hash_y_verificacion PASSED                   [  7%]
+tests/test_negocio.py::test_rut_valido[11111111-1] PASSED                [ 15%]
+tests/test_negocio.py::test_rut_valido[12345678-5] PASSED                [ 23%]
+tests/test_negocio.py::test_rut_valido[7654321-6] PASSED                 [ 30%]
+tests/test_negocio.py::test_rut_invalido[12345678-9] PASSED              [ 38%]
+tests/test_negocio.py::test_rut_invalido[1234-5] PASSED                  [ 46%]
+tests/test_negocio.py::test_rut_invalido[abc] PASSED                     [ 53%]
+tests/test_negocio.py::test_rut_invalido[] PASSED                        [ 61%]
+tests/test_negocio.py::test_permisos_por_rol PASSED                      [ 69%]
+tests/test_negocio.py::test_permiso_denegado_antes_de_tocar_bd PASSED    [ 76%]
+tests/test_negocio.py::test_login_roles PASSED                           [ 84%]
+tests/test_negocio.py::test_inscripcion_completa_duplicado_y_cupo PASSED [ 92%]
+tests/test_negocio.py::test_crud_parque_y_especie PASSED                 [100%]
+
+============================== 13 passed in 0.62s ==============================

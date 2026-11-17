@@ -1,0 +1,5 @@
+# Finales de línea Unix: bash y DELIMITER de MySQL fallan con CRLF
+* text=auto eol=lf
+*.png binary
+*.pdf binary
+*.docx binary

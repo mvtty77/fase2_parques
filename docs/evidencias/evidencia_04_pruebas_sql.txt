@@ -1,0 +1,1072 @@
+# Evidencia 04 · sql/05_pruebas.sql (conteos, pruebas negativas y R1-R12) (2026-11-11 01:36:18)
+# Las líneas ERROR son ESPERADAS en el bloque B (pruebas negativas) y al final (validación de parámetros).
+--------------
+SET NAMES utf8mb4
+--------------
+
+Query OK, 0 rows affected
+
+--------------
+SELECT 'REGION (comunidades)' AS tabla, COUNT(*) AS filas, '5-10' AS rango_pdf FROM REGION
+UNION ALL SELECT 'PARQUE', COUNT(*), '12-20' FROM PARQUE
+UNION ALL SELECT 'AREA', COUNT(*), '35-60' FROM AREA
+UNION ALL SELECT 'RECURSO_NATURAL (especies)', COUNT(*), '60-120' FROM RECURSO_NATURAL
+UNION ALL SELECT 'INVENTARIO_RECURSO', COUNT(*), '250-500' FROM INVENTARIO_RECURSO
+UNION ALL SELECT 'TRABAJADOR (personal)', COUNT(*), '40-80' FROM TRABAJADOR
+UNION ALL SELECT 'PROYECTO_CIENTIFICO', COUNT(*), '20-40' FROM PROYECTO_CIENTIFICO
+UNION ALL SELECT 'VISITANTE', COUNT(*), '150-300' FROM VISITANTE
+UNION ALL SELECT 'EXCURSION', COUNT(*), '120-250' FROM EXCURSION
+UNION ALL SELECT 'INSCRIPCION', COUNT(*), '800-1500' FROM INSCRIPCION
+UNION ALL SELECT 'EVALUACION', COUNT(*), '400-900' FROM EVALUACION
+UNION ALL SELECT 'CUENTA (usuarios)', COUNT(*), '40-80' FROM CUENTA
+--------------
+
++----------------------------+-------+-----------+
+| tabla                      | filas | rango_pdf |
++----------------------------+-------+-----------+
+| REGION (comunidades)       |    10 | 5-10      |
+| PARQUE                     |    16 | 12-20     |
+| AREA                       |    49 | 35-60     |
+| RECURSO_NATURAL (especies) |    98 | 60-120    |
+| INVENTARIO_RECURSO         |   435 | 250-500   |
+| TRABAJADOR (personal)      |    60 | 40-80     |
+| PROYECTO_CIENTIFICO        |    30 | 20-40     |
+| VISITANTE                  |   240 | 150-300   |
+| EXCURSION                  |   200 | 120-250   |
+| INSCRIPCION                |  1363 | 800-1500  |
+| EVALUACION                 |   604 | 400-900   |
+| CUENTA (usuarios)          |    50 | 40-80     |
++----------------------------+-------+-----------+
+12 rows in set
+
+--------------
+SELECT estado_asistencia, COUNT(*) AS n FROM INSCRIPCION GROUP BY estado_asistencia
+--------------
+
++-------------------+-----+
+| estado_asistencia | n   |
++-------------------+-----+
+| ASISTIO           | 987 |
+| NO_ASISTIO        | 250 |
+| INSCRITO          | 126 |
++-------------------+-----+
+3 rows in set
+
+--------------
+SELECT CASE WHEN v.id_recurso IS NOT NULL THEN 'VEGETAL' WHEN a.id_recurso IS NOT NULL THEN 'ANIMAL'
+            WHEN m.id_recurso IS NOT NULL THEN 'MINERAL' ELSE 'SIN_CLASIFICAR' END AS tipo, COUNT(*) AS especies
+FROM RECURSO_NATURAL r LEFT JOIN VEGETAL v USING (id_recurso) LEFT JOIN ANIMAL a USING (id_recurso)
+LEFT JOIN MINERAL m USING (id_recurso) GROUP BY tipo
+--------------
+
++----------------+----------+
+| tipo           | especies |
++----------------+----------+
+| ANIMAL         |       32 |
+| VEGETAL        |       34 |
+| MINERAL        |       20 |
+| SIN_CLASIFICAR |       12 |
++----------------+----------+
+4 rows in set
+
+--------------
+SELECT rol, COUNT(*) AS cuentas FROM CUENTA_ROL GROUP BY rol
+--------------
+
++---------------+---------+
+| rol           | cuentas |
++---------------+---------+
+| ADMINISTRADOR |       6 |
+| ANALISTA      |      31 |
+| OPERADOR      |      20 |
++---------------+---------+
+3 rows in set
+
+--------------
+SELECT calificacion, COUNT(*) AS n FROM EVALUACION GROUP BY calificacion ORDER BY calificacion
+--------------
+
++--------------+-----+
+| calificacion | n   |
++--------------+-----+
+|            1 |  10 |
+|            2 |  48 |
+|            3 | 159 |
+|            4 | 240 |
+|            5 | 147 |
++--------------+-----+
+5 rows in set
+
+--------------
+SELECT COUNT(*) AS personas_sin_subtipo FROM PERSONA p
+WHERE NOT EXISTS (SELECT 1 FROM TRABAJADOR t WHERE t.rut_persona = p.rut_persona)
+  AND NOT EXISTS (SELECT 1 FROM VISITANTE v WHERE v.rut_persona = p.rut_persona)
+--------------
+
++----------------------+
+| personas_sin_subtipo |
++----------------------+
+|                    0 |
++----------------------+
+1 row in set
+
+--------------
+SELECT COUNT(*) AS trabajadores_que_visitan FROM TRABAJADOR t JOIN VISITANTE v USING (rut_persona)
+--------------
+
++--------------------------+
+| trabajadores_que_visitan |
++--------------------------+
+|                       12 |
++--------------------------+
+1 row in set
+
+--------------
+SELECT COUNT(*) AS parques_sin_area FROM PARQUE p WHERE NOT EXISTS
+  (SELECT 1 FROM AREA a WHERE a.anio_declaracion = p.anio_declaracion AND a.nro_correlativo = p.nro_correlativo)
+--------------
+
++------------------+
+| parques_sin_area |
++------------------+
+|                0 |
++------------------+
+1 row in set
+
+--------------
+SELECT COUNT(*) AS parques_sin_region_principal FROM PARQUE p WHERE NOT EXISTS
+  (SELECT 1 FROM PARQUE_REGION r WHERE r.anio_declaracion = p.anio_declaracion
+     AND r.nro_correlativo = p.nro_correlativo AND r.es_principal)
+--------------
+
++------------------------------+
+| parques_sin_region_principal |
++------------------------------+
+|                            0 |
++------------------------------+
+1 row in set
+
+--------------
+SELECT COUNT(*) AS cuentas_sin_rol FROM CUENTA c WHERE NOT EXISTS (SELECT 1 FROM CUENTA_ROL r WHERE r.id_cuenta = c.id_cuenta)
+--------------
+
++-----------------+
+| cuentas_sin_rol |
++-----------------+
+|               0 |
++-----------------+
+1 row in set
+
+--------------
+INSERT INTO EVALUACION VALUES ('EXC0001', 99, (SELECT id_inscripcion FROM INSCRIPCION WHERE codigo_excursion='EXC0001' LIMIT 1), '2026-01-01', 7, NULL)
+--------------
+
+ERROR 3819 (HY000) at line 54: Check constraint 'ck_eval_calificacion' is violated.
+--------------
+INSERT INTO INSCRIPCION VALUES ('INS999999', (SELECT rut_persona FROM VISITANTE LIMIT 1), 'EXC9999', '2026-01-01', 'INSCRITO', NULL)
+--------------
+
+ERROR 1452 (23000) at line 56: Cannot add or update a child row: a foreign key constraint fails (`parques_db`.`INSCRIPCION`, CONSTRAINT `fk_insc_excursion` FOREIGN KEY (`codigo_excursion`) REFERENCES `EXCURSION` (`codigo_excursion`) ON DELETE RESTRICT ON UPDATE CASCADE)
+--------------
+INSERT INTO INSCRIPCION
+SELECT 'INS999998', rut_persona, codigo_excursion, fecha_inscripcion, 'INSCRITO', NULL FROM INSCRIPCION LIMIT 1
+--------------
+
+ERROR 1062 (23000) at line 58: Duplicate entry '6403771-4-EXC0001' for key 'INSCRIPCION.uq_insc_visitante_excursion'
+--------------
+INSERT INTO INSCRIPCION
+SELECT 'INS999997', v.rut_persona, x.codigo_excursion, '2024-01-01', 'INSCRITO', NULL
+FROM (SELECT e.codigo_excursion FROM EXCURSION e JOIN INSCRIPCION i USING (codigo_excursion)
+      GROUP BY e.codigo_excursion, e.capacidad HAVING COUNT(*) >= e.capacidad LIMIT 1) x
+JOIN VISITANTE v
+WHERE NOT EXISTS (SELECT 1 FROM INSCRIPCION i2 WHERE i2.rut_persona = v.rut_persona AND i2.codigo_excursion = x.codigo_excursion)
+LIMIT 1
+--------------
+
+ERROR 1644 (45000) at line 61: Excursión sin cupo disponible
+--------------
+INSERT INTO EVALUACION
+SELECT codigo_excursion, 98, id_inscripcion, CURDATE(), 4, 'prueba'
+FROM INSCRIPCION WHERE estado_asistencia = 'NO_ASISTIO' LIMIT 1
+--------------
+
+ERROR 1644 (45000) at line 69: Solo se evalúan inscripciones con asistencia (ASISTIO)
+--------------
+INSERT INTO EVALUACION
+SELECT 'EXC0002', 97, id_inscripcion, CURDATE(), 4, NULL
+FROM INSCRIPCION WHERE codigo_excursion = 'EXC0001' AND estado_asistencia = 'ASISTIO'
+  AND id_inscripcion NOT IN (SELECT id_inscripcion FROM EVALUACION) LIMIT 1
+--------------
+
+ERROR 1452 (23000) at line 73: Cannot add or update a child row: a foreign key constraint fails (`parques_db`.`EVALUACION`, CONSTRAINT `fk_eval_inscripcion` FOREIGN KEY (`id_inscripcion`, `codigo_excursion`) REFERENCES `INSCRIPCION` (`id_inscripcion`, `codigo_excursion`) ON DELETE CASCADE)
+--------------
+INSERT INTO PARQUE_REGION (anio_declaracion, nro_correlativo, id_region, porcentaje_territorial, es_principal)
+SELECT p.anio_declaracion, p.nro_correlativo, r.id_region, 10, TRUE
+FROM PARQUE p JOIN REGION r
+WHERE NOT EXISTS (SELECT 1 FROM PARQUE_REGION x WHERE x.anio_declaracion = p.anio_declaracion
+                    AND x.nro_correlativo = p.nro_correlativo AND x.id_region = r.id_region)
+LIMIT 1
+--------------
+
+ERROR 1062 (23000) at line 78: Duplicate entry '1982-2-1' for key 'PARQUE_REGION.uq_parque_region_principal'
+--------------
+INSERT INTO ANIMAL VALUES ((SELECT MIN(id_recurso) FROM VEGETAL), 'HERBIVORO', 'Marzo')
+--------------
+
+ERROR 1644 (45000) at line 85: Especialización disjunta: el recurso ya pertenece a otro subtipo
+--------------
+DELETE FROM PARQUE WHERE nombre = 'Torres del Paine'
+--------------
+
+ERROR 1451 (23000) at line 87: Cannot delete or update a parent row: a foreign key constraint fails (`parques_db`.`AREA`, CONSTRAINT `fk_area_parque` FOREIGN KEY (`anio_declaracion`, `nro_correlativo`) REFERENCES `PARQUE` (`anio_declaracion`, `nro_correlativo`) ON DELETE RESTRICT ON UPDATE CA)
+--------------
+UPDATE AREA SET nivel_acceso = 'LIBRE' WHERE nro_area = 1 LIMIT 1
+--------------
+
+ERROR 3819 (HY000) at line 89: Check constraint 'ck_area_acceso' is violated.
+--------------
+UPDATE TRABAJADOR SET rut_supervisor = rut_persona LIMIT 1
+--------------
+
+ERROR 1644 (45000) at line 91: Un trabajador no puede supervisarse a sí mismo
+--------------
+START TRANSACTION
+--------------
+
+Query OK, 0 rows affected
+
+--------------
+INSERT INTO INSCRIPCION
+SELECT 'INS900000', v.rut_persona, e.codigo_excursion, CURDATE(), 'INSCRITO', 'prueba'
+FROM EXCURSION e JOIN VISITANTE v
+WHERE e.fecha > CURDATE()
+  AND (SELECT COUNT(*) FROM INSCRIPCION i WHERE i.codigo_excursion = e.codigo_excursion) < e.capacidad
+  AND NOT EXISTS (SELECT 1 FROM INSCRIPCION i WHERE i.codigo_excursion = e.codigo_excursion AND i.rut_persona = v.rut_persona)
+LIMIT 1
+--------------
+
+Query OK, 1 row affected
+Records: 1  Duplicates: 0  Warnings: 0
+
+--------------
+SELECT id_inscripcion, codigo_excursion, estado_asistencia FROM INSCRIPCION WHERE id_inscripcion = 'INS900000'
+--------------
+
++----------------+------------------+-------------------+
+| id_inscripcion | codigo_excursion | estado_asistencia |
++----------------+------------------+-------------------+
+| INS900000      | EXC0200          | INSCRITO          |
++----------------+------------------+-------------------+
+1 row in set
+
+--------------
+ROLLBACK
+--------------
+
+Query OK, 0 rows affected
+
+--------------
+SELECT COUNT(*) AS debe_ser_0 FROM INSCRIPCION WHERE id_inscripcion = 'INS900000'
+--------------
+
++------------+
+| debe_ser_0 |
++------------+
+|          0 |
++------------+
+1 row in set
+
+--------------
+CALL sp_r1_areas_mas_visitantes('2025-01-01', '2025-12-31')
+--------------
+
++------------------------+----------+--------------------+-------------+---------------+------------+
+| parque                 | nro_area | area               | excursiones | inscripciones | visitantes |
++------------------------+----------+--------------------+-------------+---------------+------------+
+| Torres del Paine       |        1 | Mirador Norte      |           5 |            64 |         58 |
+| Villarrica             |        4 | Pampa              |           5 |            48 |         36 |
+| Puyehue                |        1 | Valle Central      |           3 |            29 |         27 |
+| Villarrica             |        1 | Cascadas           |           4 |            33 |         21 |
+| Nahuelbuta             |        1 | Valle Central      |           2 |            22 |         21 |
+| Radal Siete Tazas      |        1 | Sector Volcán      |           3 |            26 |         18 |
+| Conguillío             |        2 | Laguna Verde       |           2 |            19 |         18 |
+| Pan de Azúcar          |        2 | Laguna Verde       |           3 |            23 |         17 |
+| La Campana             |        3 | Laguna Verde       |           4 |            18 |         14 |
+| Conguillío             |        3 | Humedal            |           3 |            13 |         13 |
+| Vicente Pérez Rosales  |        4 | Sendero del Bosque |           3 |            16 |         13 |
+| Lauca                  |        3 | Costa              |           2 |            12 |         12 |
+| Chiloé                 |        1 | Sector Lago        |           4 |            16 |         11 |
+| Villarrica             |        3 | Humedal            |           2 |            17 |         11 |
+| Pan de Azúcar          |        3 | Cascadas           |           2 |            14 |         10 |
+| La Campana             |        4 | Glaciar            |           3 |            11 |          9 |
+| Queulat                |        2 | Cascadas           |           2 |            13 |          8 |
+| Villarrica             |        2 | Costa              |           2 |            13 |          8 |
+| Huerquehue             |        1 | Quebrada Alta      |           1 |             8 |          8 |
+| Vicente Pérez Rosales  |        1 | Mirador Norte      |           2 |             7 |          7 |
+| La Campana             |        2 | Mirador Norte      |           3 |            11 |          5 |
+| Nahuelbuta             |        4 | Quebrada Alta      |           1 |             5 |          5 |
+| Queulat                |        4 | Sector Lago        |           2 |             7 |          4 |
+| Vicente Pérez Rosales  |        2 | Quebrada Alta      |           1 |             6 |          4 |
+| Alerce Andino          |        2 | Sector Volcán      |           1 |             3 |          3 |
+| Puyehue                |        2 | Quebrada Alta      |           1 |             5 |          3 |
+| Pan de Azúcar          |        1 | Sendero del Bosque |           2 |             5 |          2 |
+| Lauca                  |        4 | Valle Central      |           1 |             3 |          2 |
+| Queulat                |        1 | Humedal            |           1 |             3 |          1 |
+| Bosque Fray Jorge      |        2 | Cordón Sur         |           1 |             1 |          0 |
++------------------------+----------+--------------------+-------------+---------------+------------+
+30 rows in set
+
+Query OK, 0 rows affected
+
+--------------
+SELECT * FROM vw_r2_distribucion_especies ORDER BY parque, area, tipo_especie
+--------------
+
++------------------+-----------------+------------------------+----------+--------------------+----------------+--------------------+----------------+
+| anio_declaracion | nro_correlativo | parque                 | nro_area | area               | tipo_especie   | especies_distintas | cantidad_total |
++------------------+-----------------+------------------------+----------+--------------------+----------------+--------------------+----------------+
+|             1982 |               2 | Alerce Andino          |        1 | Cordón Sur         | ANIMAL         |                  5 |            675 |
+|             1982 |               2 | Alerce Andino          |        1 | Cordón Sur         | MINERAL        |                  1 |             49 |
+|             1982 |               2 | Alerce Andino          |        1 | Cordón Sur         | VEGETAL        |                  3 |          13858 |
+|             1982 |               2 | Alerce Andino          |        3 | Laguna Verde       | ANIMAL         |                  3 |            365 |
+|             1982 |               2 | Alerce Andino          |        3 | Laguna Verde       | MINERAL        |                  3 |            108 |
+|             1982 |               2 | Alerce Andino          |        3 | Laguna Verde       | SIN_CLASIFICAR |                  1 |             32 |
+|             1982 |               2 | Alerce Andino          |        3 | Laguna Verde       | VEGETAL        |                  4 |           3711 |
+|             1982 |               2 | Alerce Andino          |        2 | Sector Volcán      | ANIMAL         |                  5 |            315 |
+|             1982 |               2 | Alerce Andino          |        2 | Sector Volcán      | MINERAL        |                  2 |            100 |
+|             1982 |               2 | Alerce Andino          |        2 | Sector Volcán      | SIN_CLASIFICAR |                  1 |            172 |
+|             1982 |               2 | Alerce Andino          |        2 | Sector Volcán      | VEGETAL        |                  1 |           2986 |
+|             1941 |               2 | Bosque Fray Jorge      |        2 | Cordón Sur         | ANIMAL         |                  2 |            198 |
+|             1941 |               2 | Bosque Fray Jorge      |        2 | Cordón Sur         | MINERAL        |                  2 |             49 |
+|             1941 |               2 | Bosque Fray Jorge      |        2 | Cordón Sur         | VEGETAL        |                  7 |           7171 |
+|             1941 |               2 | Bosque Fray Jorge      |        1 | Mirador Norte      | ANIMAL         |                  3 |            149 |
+|             1941 |               2 | Bosque Fray Jorge      |        1 | Mirador Norte      | MINERAL        |                  4 |            117 |
+|             1941 |               2 | Bosque Fray Jorge      |        1 | Mirador Norte      | VEGETAL        |                  1 |             51 |
+|             1982 |               1 | Chiloé                 |        2 | Humedal            | ANIMAL         |                  5 |            496 |
+|             1982 |               1 | Chiloé                 |        2 | Humedal            | MINERAL        |                  1 |              7 |
+|             1982 |               1 | Chiloé                 |        2 | Humedal            | SIN_CLASIFICAR |                  1 |             10 |
+|             1982 |               1 | Chiloé                 |        2 | Humedal            | VEGETAL        |                  2 |           4036 |
+|             1982 |               1 | Chiloé                 |        1 | Sector Lago        | ANIMAL         |                  3 |             20 |
+|             1982 |               1 | Chiloé                 |        1 | Sector Lago        | MINERAL        |                  2 |             11 |
+|             1982 |               1 | Chiloé                 |        1 | Sector Lago        | VEGETAL        |                  5 |           4980 |
+|             1950 |               1 | Conguillío             |        4 | Costa              | ANIMAL         |                  5 |            904 |
+|             1950 |               1 | Conguillío             |        4 | Costa              | MINERAL        |                  1 |             49 |
+|             1950 |               1 | Conguillío             |        4 | Costa              | SIN_CLASIFICAR |                  1 |            451 |
+|             1950 |               1 | Conguillío             |        4 | Costa              | VEGETAL        |                  4 |          10584 |
+|             1950 |               1 | Conguillío             |        3 | Humedal            | ANIMAL         |                  1 |            347 |
+|             1950 |               1 | Conguillío             |        3 | Humedal            | MINERAL        |                  1 |             14 |
+|             1950 |               1 | Conguillío             |        3 | Humedal            | VEGETAL        |                  4 |           4079 |
+|             1950 |               1 | Conguillío             |        2 | Laguna Verde       | ANIMAL         |                  3 |            477 |
+|             1950 |               1 | Conguillío             |        2 | Laguna Verde       | MINERAL        |                  1 |             21 |
+|             1950 |               1 | Conguillío             |        2 | Laguna Verde       | VEGETAL        |                  4 |           9451 |
+|             1950 |               1 | Conguillío             |        1 | Quebrada Alta      | ANIMAL         |                  2 |            142 |
+|             1950 |               1 | Conguillío             |        1 | Quebrada Alta      | VEGETAL        |                  4 |           7439 |
+|             1967 |               2 | Huerquehue             |        2 | Humedal            | ANIMAL         |                  3 |            415 |
+|             1967 |               2 | Huerquehue             |        2 | Humedal            | MINERAL        |                  2 |             16 |
+|             1967 |               2 | Huerquehue             |        2 | Humedal            | SIN_CLASIFICAR |                  1 |             23 |
+|             1967 |               2 | Huerquehue             |        1 | Quebrada Alta      | ANIMAL         |                  4 |             79 |
+|             1967 |               2 | Huerquehue             |        1 | Quebrada Alta      | SIN_CLASIFICAR |                  1 |             15 |
+|             1967 |               2 | Huerquehue             |        1 | Quebrada Alta      | VEGETAL        |                  4 |           6525 |
+|             1967 |               1 | La Campana             |        1 | Costa              | ANIMAL         |                  5 |            391 |
+|             1967 |               1 | La Campana             |        1 | Costa              | MINERAL        |                  1 |             17 |
+|             1967 |               1 | La Campana             |        1 | Costa              | VEGETAL        |                  4 |           9019 |
+|             1967 |               1 | La Campana             |        4 | Glaciar            | ANIMAL         |                  2 |             51 |
+|             1967 |               1 | La Campana             |        4 | Glaciar            | MINERAL        |                  3 |             19 |
+|             1967 |               1 | La Campana             |        4 | Glaciar            | SIN_CLASIFICAR |                  1 |             16 |
+|             1967 |               1 | La Campana             |        4 | Glaciar            | VEGETAL        |                  3 |           4767 |
+|             1967 |               1 | La Campana             |        3 | Laguna Verde       | ANIMAL         |                  1 |             18 |
+|             1967 |               1 | La Campana             |        3 | Laguna Verde       | MINERAL        |                  2 |             29 |
+|             1967 |               1 | La Campana             |        3 | Laguna Verde       | SIN_CLASIFICAR |                  1 |            676 |
+|             1967 |               1 | La Campana             |        3 | Laguna Verde       | VEGETAL        |                  4 |           7779 |
+|             1967 |               1 | La Campana             |        2 | Mirador Norte      | ANIMAL         |                  2 |            594 |
+|             1967 |               1 | La Campana             |        2 | Mirador Norte      | MINERAL        |                  2 |            159 |
+|             1967 |               1 | La Campana             |        2 | Mirador Norte      | SIN_CLASIFICAR |                  1 |             61 |
+|             1967 |               1 | La Campana             |        2 | Mirador Norte      | VEGETAL        |                  3 |           7196 |
+|             1970 |               1 | Lauca                  |        2 | Bosque Antiguo     | ANIMAL         |                  3 |            157 |
+|             1970 |               1 | Lauca                  |        2 | Bosque Antiguo     | MINERAL        |                  1 |             77 |
+|             1970 |               1 | Lauca                  |        2 | Bosque Antiguo     | SIN_CLASIFICAR |                  2 |            890 |
+|             1970 |               1 | Lauca                  |        2 | Bosque Antiguo     | VEGETAL        |                  2 |           2409 |
+|             1970 |               1 | Lauca                  |        3 | Costa              | ANIMAL         |                  3 |            711 |
+|             1970 |               1 | Lauca                  |        3 | Costa              | SIN_CLASIFICAR |                  2 |            482 |
+|             1970 |               1 | Lauca                  |        3 | Costa              | VEGETAL        |                  1 |             51 |
+|             1970 |               1 | Lauca                  |        1 | Mirador Norte      | ANIMAL         |                  4 |            393 |
+|             1970 |               1 | Lauca                  |        1 | Mirador Norte      | SIN_CLASIFICAR |                  1 |             36 |
+|             1970 |               1 | Lauca                  |        1 | Mirador Norte      | VEGETAL        |                  4 |           7333 |
+|             1970 |               1 | Lauca                  |        4 | Valle Central      | ANIMAL         |                  1 |            211 |
+|             1970 |               1 | Lauca                  |        4 | Valle Central      | MINERAL        |                  5 |            163 |
+|             1970 |               1 | Lauca                  |        4 | Valle Central      | SIN_CLASIFICAR |                  1 |            398 |
+|             1970 |               1 | Lauca                  |        4 | Valle Central      | VEGETAL        |                  1 |            115 |
+|             1939 |               1 | Nahuelbuta             |        4 | Quebrada Alta      | ANIMAL         |                  3 |            641 |
+|             1939 |               1 | Nahuelbuta             |        4 | Quebrada Alta      | MINERAL        |                  1 |             67 |
+|             1939 |               1 | Nahuelbuta             |        4 | Quebrada Alta      | VEGETAL        |                  5 |          13087 |
+|             1939 |               1 | Nahuelbuta             |        2 | Sector Lago        | ANIMAL         |                  2 |            100 |
+|             1939 |               1 | Nahuelbuta             |        2 | Sector Lago        | MINERAL        |                  3 |            166 |
+|             1939 |               1 | Nahuelbuta             |        2 | Sector Lago        | SIN_CLASIFICAR |                  1 |            378 |
+|             1939 |               1 | Nahuelbuta             |        2 | Sector Lago        | VEGETAL        |                  5 |           7887 |
+|             1939 |               1 | Nahuelbuta             |        3 | Sendero del Bosque | ANIMAL         |                  4 |            396 |
+|             1939 |               1 | Nahuelbuta             |        3 | Sendero del Bosque | MINERAL        |                  1 |              7 |
+|             1939 |               1 | Nahuelbuta             |        3 | Sendero del Bosque | VEGETAL        |                  2 |           1251 |
+|             1939 |               1 | Nahuelbuta             |        1 | Valle Central      | ANIMAL         |                  1 |              3 |
+|             1939 |               1 | Nahuelbuta             |        1 | Valle Central      | MINERAL        |                  1 |             69 |
+|             1939 |               1 | Nahuelbuta             |        1 | Valle Central      | SIN_CLASIFICAR |                  3 |            968 |
+|             1939 |               1 | Nahuelbuta             |        1 | Valle Central      | VEGETAL        |                  3 |           1541 |
+|             1985 |               1 | Pan de Azúcar          |        3 | Cascadas           | ANIMAL         |                  3 |            464 |
+|             1985 |               1 | Pan de Azúcar          |        3 | Cascadas           | MINERAL        |                  3 |            116 |
+|             1985 |               1 | Pan de Azúcar          |        3 | Cascadas           | VEGETAL        |                  5 |           2348 |
+|             1985 |               1 | Pan de Azúcar          |        2 | Laguna Verde       | ANIMAL         |                  3 |            422 |
+|             1985 |               1 | Pan de Azúcar          |        2 | Laguna Verde       | MINERAL        |                  2 |             89 |
+|             1985 |               1 | Pan de Azúcar          |        2 | Laguna Verde       | SIN_CLASIFICAR |                  1 |             58 |
+|             1985 |               1 | Pan de Azúcar          |        2 | Laguna Verde       | VEGETAL        |                  5 |          20528 |
+|             1985 |               1 | Pan de Azúcar          |        1 | Sendero del Bosque | ANIMAL         |                  4 |            344 |
+|             1985 |               1 | Pan de Azúcar          |        1 | Sendero del Bosque | MINERAL        |                  2 |              9 |
+|             1985 |               1 | Pan de Azúcar          |        1 | Sendero del Bosque | VEGETAL        |                  3 |           6204 |
+|             1985 |               2 | Pichasca               |        1 | Cascadas           | ANIMAL         |                  2 |             93 |
+|             1985 |               2 | Pichasca               |        1 | Cascadas           | MINERAL        |                  3 |             55 |
+|             1985 |               2 | Pichasca               |        1 | Cascadas           | SIN_CLASIFICAR |                  1 |             11 |
+|             1985 |               2 | Pichasca               |        1 | Cascadas           | VEGETAL        |                  3 |           5417 |
+|             1985 |               2 | Pichasca               |        3 | Glaciar            | ANIMAL         |                  1 |            178 |
+|             1985 |               2 | Pichasca               |        3 | Glaciar            | MINERAL        |                  2 |             66 |
+|             1985 |               2 | Pichasca               |        3 | Glaciar            | SIN_CLASIFICAR |                  3 |            254 |
+|             1985 |               2 | Pichasca               |        3 | Glaciar            | VEGETAL        |                  4 |           5405 |
+|             1985 |               2 | Pichasca               |        2 | Sector Volcán      | MINERAL        |                  3 |            152 |
+|             1985 |               2 | Pichasca               |        2 | Sector Volcán      | VEGETAL        |                  5 |           6302 |
+|             1941 |               1 | Puyehue                |        2 | Quebrada Alta      | ANIMAL         |                  2 |            258 |
+|             1941 |               1 | Puyehue                |        2 | Quebrada Alta      | MINERAL        |                  2 |             66 |
+|             1941 |               1 | Puyehue                |        2 | Quebrada Alta      | SIN_CLASIFICAR |                  2 |            673 |
+|             1941 |               1 | Puyehue                |        2 | Quebrada Alta      | VEGETAL        |                  5 |           5062 |
+|             1941 |               1 | Puyehue                |        1 | Valle Central      | ANIMAL         |                  4 |            194 |
+|             1941 |               1 | Puyehue                |        1 | Valle Central      | MINERAL        |                  3 |            191 |
+|             1941 |               1 | Puyehue                |        1 | Valle Central      | SIN_CLASIFICAR |                  2 |            368 |
+|             1941 |               1 | Puyehue                |        1 | Valle Central      | VEGETAL        |                  2 |           4328 |
+|             1983 |               1 | Queulat                |        2 | Cascadas           | ANIMAL         |                  5 |            567 |
+|             1983 |               1 | Queulat                |        2 | Cascadas           | MINERAL        |                  1 |             43 |
+|             1983 |               1 | Queulat                |        2 | Cascadas           | SIN_CLASIFICAR |                  1 |            354 |
+|             1983 |               1 | Queulat                |        2 | Cascadas           | VEGETAL        |                  4 |          10001 |
+|             1983 |               1 | Queulat                |        1 | Humedal            | ANIMAL         |                  4 |            358 |
+|             1983 |               1 | Queulat                |        1 | Humedal            | MINERAL        |                  1 |             31 |
+|             1983 |               1 | Queulat                |        1 | Humedal            | SIN_CLASIFICAR |                  1 |             34 |
+|             1983 |               1 | Queulat                |        1 | Humedal            | VEGETAL        |                  3 |           6239 |
+|             1983 |               1 | Queulat                |        4 | Sector Lago        | ANIMAL         |                  5 |            443 |
+|             1983 |               1 | Queulat                |        4 | Sector Lago        | MINERAL        |                  1 |             45 |
+|             1983 |               1 | Queulat                |        4 | Sector Lago        | VEGETAL        |                  2 |           6396 |
+|             1983 |               1 | Queulat                |        3 | Sector Volcán      | ANIMAL         |                  5 |            494 |
+|             1983 |               1 | Queulat                |        3 | Sector Volcán      | VEGETAL        |                  3 |           6750 |
+|             1996 |               1 | Radal Siete Tazas      |        2 | Bosque Antiguo     | ANIMAL         |                  3 |             77 |
+|             1996 |               1 | Radal Siete Tazas      |        2 | Bosque Antiguo     | MINERAL        |                  3 |             48 |
+|             1996 |               1 | Radal Siete Tazas      |        2 | Bosque Antiguo     | VEGETAL        |                  5 |           9410 |
+|             1996 |               1 | Radal Siete Tazas      |        1 | Sector Volcán      | ANIMAL         |                  3 |            299 |
+|             1996 |               1 | Radal Siete Tazas      |        1 | Sector Volcán      | MINERAL        |                  2 |             45 |
+|             1996 |               1 | Radal Siete Tazas      |        1 | Sector Volcán      | SIN_CLASIFICAR |                  1 |            318 |
+|             1996 |               1 | Radal Siete Tazas      |        1 | Sector Volcán      | VEGETAL        |                  2 |           2523 |
+|             1959 |               1 | Torres del Paine       |        2 | Glaciar            | ANIMAL         |                  5 |            867 |
+|             1959 |               1 | Torres del Paine       |        2 | Glaciar            | MINERAL        |                  3 |              6 |
+|             1959 |               1 | Torres del Paine       |        2 | Glaciar            | VEGETAL        |                  3 |           2088 |
+|             1959 |               1 | Torres del Paine       |        1 | Mirador Norte      | ANIMAL         |                  5 |            630 |
+|             1959 |               1 | Torres del Paine       |        1 | Mirador Norte      | MINERAL        |                  3 |             76 |
+|             1959 |               1 | Torres del Paine       |        1 | Mirador Norte      | VEGETAL        |                  3 |           7130 |
+|             1926 |               1 | Vicente Pérez Rosales  |        1 | Mirador Norte      | ANIMAL         |                  2 |            330 |
+|             1926 |               1 | Vicente Pérez Rosales  |        1 | Mirador Norte      | MINERAL        |                  3 |            107 |
+|             1926 |               1 | Vicente Pérez Rosales  |        1 | Mirador Norte      | SIN_CLASIFICAR |                  2 |            340 |
+|             1926 |               1 | Vicente Pérez Rosales  |        1 | Mirador Norte      | VEGETAL        |                  1 |            204 |
+|             1926 |               1 | Vicente Pérez Rosales  |        2 | Quebrada Alta      | ANIMAL         |                  3 |            353 |
+|             1926 |               1 | Vicente Pérez Rosales  |        2 | Quebrada Alta      | MINERAL        |                  3 |              8 |
+|             1926 |               1 | Vicente Pérez Rosales  |        2 | Quebrada Alta      | VEGETAL        |                  1 |           1218 |
+|             1926 |               1 | Vicente Pérez Rosales  |        3 | Sector Lago        | ANIMAL         |                  1 |              7 |
+|             1926 |               1 | Vicente Pérez Rosales  |        3 | Sector Lago        | MINERAL        |                  1 |              1 |
+|             1926 |               1 | Vicente Pérez Rosales  |        3 | Sector Lago        | VEGETAL        |                  5 |           6660 |
+|             1926 |               1 | Vicente Pérez Rosales  |        4 | Sendero del Bosque | ANIMAL         |                  4 |            553 |
+|             1926 |               1 | Vicente Pérez Rosales  |        4 | Sendero del Bosque | MINERAL        |                  1 |             50 |
+|             1926 |               1 | Vicente Pérez Rosales  |        4 | Sendero del Bosque | SIN_CLASIFICAR |                  1 |             41 |
+|             1926 |               1 | Vicente Pérez Rosales  |        4 | Sendero del Bosque | VEGETAL        |                  3 |           2516 |
+|             1940 |               1 | Villarrica             |        1 | Cascadas           | ANIMAL         |                  2 |            358 |
+|             1940 |               1 | Villarrica             |        1 | Cascadas           | MINERAL        |                  3 |            101 |
+|             1940 |               1 | Villarrica             |        1 | Cascadas           | VEGETAL        |                  5 |          12802 |
+|             1940 |               1 | Villarrica             |        2 | Costa              | ANIMAL         |                  2 |             36 |
+|             1940 |               1 | Villarrica             |        2 | Costa              | MINERAL        |                  5 |            217 |
+|             1940 |               1 | Villarrica             |        2 | Costa              | VEGETAL        |                  2 |           1887 |
+|             1940 |               1 | Villarrica             |        3 | Humedal            | ANIMAL         |                  3 |            205 |
+|             1940 |               1 | Villarrica             |        3 | Humedal            | MINERAL        |                  2 |              8 |
+|             1940 |               1 | Villarrica             |        3 | Humedal            | SIN_CLASIFICAR |                  1 |            546 |
+|             1940 |               1 | Villarrica             |        3 | Humedal            | VEGETAL        |                  2 |           6009 |
+|             1940 |               1 | Villarrica             |        4 | Pampa              | ANIMAL         |                  2 |            425 |
+|             1940 |               1 | Villarrica             |        4 | Pampa              | MINERAL        |                  2 |              4 |
+|             1940 |               1 | Villarrica             |        4 | Pampa              | SIN_CLASIFICAR |                  1 |            109 |
+|             1940 |               1 | Villarrica             |        4 | Pampa              | VEGETAL        |                  1 |           1035 |
++------------------+-----------------+------------------------+----------+--------------------+----------------+--------------------+----------------+
+167 rows in set
+
+--------------
+SELECT * FROM vw_r3_visitantes_vs_evaluacion ORDER BY cantidad_participantes DESC
+--------------
+
++------------------+------------+------------+-----------+------------------------+--------------------+-----------------------+---------------------+
+| codigo_excursion | fecha      | modalidad  | capacidad | cantidad_participantes | cantidad_inscritos | cantidad_evaluaciones | promedio_evaluacion |
++------------------+------------+------------+-----------+------------------------+--------------------+-----------------------+---------------------+
+| EXC0092          | 2025-05-19 | AUTOGUIADA |        30 |                     28 |                 30 |                    15 |                2.67 |
+| EXC0145          | 2026-02-09 | AUTOGUIADA |        23 |                     22 |                 23 |                    13 |                4.15 |
+| EXC0074          | 2025-02-13 | AUTOGUIADA |        21 |                     20 |                 21 |                    14 |                2.93 |
+| EXC0142          | 2026-01-16 | EDUCATIVA  |        24 |                     19 |                 21 |                     9 |                2.67 |
+| EXC0182          | 2026-11-05 | AUTOGUIADA |        30 |                     19 |                 20 |                    11 |                3.18 |
+| EXC0072          | 2025-02-04 | AUTOGUIADA |        28 |                     18 |                 18 |                     6 |                2.67 |
+| EXC0051          | 2024-11-11 | EDUCATIVA  |        20 |                     16 |                 16 |                    10 |                2.60 |
+| EXC0003          | 2024-01-15 | AUTOGUIADA |        22 |                     15 |                 16 |                     9 |                3.78 |
+| EXC0006          | 2024-01-24 | EDUCATIVA  |        21 |                     14 |                 21 |                     9 |                2.67 |
+| EXC0132          | 2025-12-19 | EDUCATIVA  |        25 |                     14 |                 22 |                    10 |                4.30 |
+| EXC0009          | 2024-02-04 | GUIADA     |        13 |                     12 |                 12 |                     6 |                3.00 |
+| EXC0133          | 2025-12-20 | AUTOGUIADA |        26 |                     12 |                 15 |                     9 |                4.67 |
+| EXC0037          | 2024-08-21 | GUIADA     |        19 |                     11 |                 11 |                     7 |                3.14 |
+| EXC0048          | 2024-10-31 | GUIADA     |        18 |                     11 |                 12 |                     7 |                4.29 |
+| EXC0053          | 2024-11-13 | GUIADA     |        20 |                     11 |                 20 |                     5 |                4.00 |
+| EXC0063          | 2024-12-16 | EDUCATIVA  |        17 |                     11 |                 12 |                     7 |                4.43 |
+| EXC0075          | 2025-02-13 | GUIADA     |        13 |                     11 |                 13 |                     5 |                4.60 |
+| EXC0093          | 2025-05-27 | EDUCATIVA  |        19 |                     11 |                 16 |                     8 |                3.00 |
+| EXC0002          | 2024-01-10 | GUIADA     |        18 |                     10 |                 10 |                     3 |                3.33 |
+| EXC0021          | 2024-04-02 | AUTOGUIADA |        28 |                     10 |                 14 |                     5 |                3.80 |
+| EXC0028          | 2024-05-23 | AUTOGUIADA |        18 |                     10 |                 11 |                     4 |                3.50 |
+| EXC0032          | 2024-08-07 | AUTOGUIADA |        19 |                     10 |                 10 |                     6 |                4.17 |
+| EXC0105          | 2025-08-14 | GUIADA     |        18 |                     10 |                 11 |                     6 |                3.83 |
+| EXC0121          | 2025-10-23 | AUTOGUIADA |        24 |                     10 |                 12 |                     3 |                3.33 |
+| EXC0148          | 2026-03-04 | GUIADA     |        18 |                     10 |                 18 |                     4 |                4.75 |
+| EXC0160          | 2026-05-29 | AUTOGUIADA |        23 |                     10 |                 11 |                     4 |                4.00 |
+| EXC0017          | 2024-03-28 | EDUCATIVA  |        19 |                      9 |                 10 |                     7 |                3.57 |
+| EXC0029          | 2024-06-09 | AUTOGUIADA |        17 |                      9 |                 10 |                     5 |                3.40 |
+| EXC0080          | 2025-03-28 | AUTOGUIADA |        20 |                      9 |                 10 |                     8 |                3.63 |
+| EXC0110          | 2025-09-03 | EDUCATIVA  |        23 |                      9 |                  9 |                     6 |                3.17 |
+| EXC0111          | 2025-09-06 | EDUCATIVA  |        20 |                      9 |                 11 |                     6 |                4.17 |
+| EXC0120          | 2025-10-22 | GUIADA     |        14 |                      9 |                 10 |                     6 |                4.33 |
+| EXC0136          | 2025-12-23 | AUTOGUIADA |        16 |                      9 |                 13 |                     5 |                3.80 |
+| EXC0146          | 2026-02-25 | EDUCATIVA  |        11 |                      9 |                 10 |                     2 |                3.00 |
+| EXC0163          | 2026-07-01 | GUIADA     |        13 |                      9 |                 13 |                     8 |                4.38 |
+| EXC0173          | 2026-09-05 | GUIADA     |        17 |                      9 |                  9 |                     7 |                2.14 |
+| EXC0026          | 2024-05-12 | AUTOGUIADA |        24 |                      8 |                  8 |                     5 |                4.60 |
+| EXC0034          | 2024-08-15 | GUIADA     |        18 |                      8 |                  9 |                     3 |                3.67 |
+| EXC0057          | 2024-11-30 | EDUCATIVA  |        17 |                      8 |                  8 |                     5 |                4.80 |
+| EXC0119          | 2025-10-20 | GUIADA     |        18 |                      8 |                  8 |                     8 |                3.88 |
+| EXC0154          | 2026-04-16 | AUTOGUIADA |        17 |                      8 |                 11 |                     5 |                4.80 |
+| EXC0159          | 2026-05-28 | GUIADA     |        15 |                      8 |                 10 |                     8 |                3.88 |
+| EXC0016          | 2024-03-25 | AUTOGUIADA |        25 |                      7 |                  9 |                     5 |                4.00 |
+| EXC0050          | 2024-11-11 | AUTOGUIADA |        25 |                      7 |                  7 |                     2 |                4.50 |
+| EXC0055          | 2024-11-15 | GUIADA     |        19 |                      7 |                 11 |                     6 |                4.00 |
+| EXC0059          | 2024-12-08 | GUIADA     |        18 |                      7 |                  7 |                     5 |                4.20 |
+| EXC0064          | 2024-12-23 | GUIADA     |        14 |                      7 |                 11 |                     5 |                4.60 |
+| EXC0071          | 2025-01-28 | GUIADA     |        16 |                      7 |                  7 |                     3 |                3.67 |
+| EXC0115          | 2025-09-26 | EDUCATIVA  |        22 |                      7 |                  9 |                     5 |                4.40 |
+| EXC0149          | 2026-03-05 | EDUCATIVA  |        24 |                      7 |                  9 |                     4 |                3.75 |
+| EXC0174          | 2026-09-08 | GUIADA     |        13 |                      7 |                  9 |                     4 |                4.00 |
+| EXC0043          | 2024-10-09 | NOCTURNA   |         9 |                      6 |                  6 |                     4 |                4.25 |
+| EXC0058          | 2024-12-05 | AUTOGUIADA |        15 |                      6 |                  6 |                     3 |                4.00 |
+| EXC0062          | 2024-12-12 | EDUCATIVA  |        10 |                      6 |                  6 |                     3 |                4.33 |
+| EXC0067          | 2025-01-07 | GUIADA     |        15 |                      6 |                  6 |                     3 |                2.33 |
+| EXC0088          | 2025-05-05 | GUIADA     |        17 |                      6 |                  6 |                     6 |                4.67 |
+| EXC0112          | 2025-09-09 | GUIADA     |         9 |                      6 |                  6 |                     6 |                3.33 |
+| EXC0131          | 2025-12-15 | GUIADA     |        15 |                      6 |                 12 |                     4 |                4.50 |
+| EXC0137          | 2026-01-01 | AUTOGUIADA |        19 |                      6 |                  8 |                     2 |                2.50 |
+| EXC0140          | 2026-01-14 | EDUCATIVA  |        15 |                      6 |                  8 |                     6 |                4.67 |
+| EXC0167          | 2026-08-09 | EDUCATIVA  |        25 |                      6 |                  6 |                     2 |                3.50 |
+| EXC0171          | 2026-09-01 | EDUCATIVA  |        23 |                      6 |                  6 |                     2 |                4.00 |
+| EXC0172          | 2026-09-04 | AUTOGUIADA |        19 |                      6 |                  7 |                     4 |                4.75 |
+| EXC0001          | 2024-01-08 | GUIADA     |         8 |                      5 |                  7 |                     1 |                4.00 |
+| EXC0010          | 2024-02-06 | GUIADA     |         9 |                      5 |                  6 |                     3 |                4.33 |
+| EXC0014          | 2024-03-20 | AUTOGUIADA |        29 |                      5 |                  6 |                     3 |                3.33 |
+| EXC0015          | 2024-03-24 | AUTOGUIADA |        20 |                      5 |                  6 |                     5 |                3.40 |
+| EXC0018          | 2024-03-31 | NOCTURNA   |         6 |                      5 |                  6 |                     4 |                4.50 |
+| EXC0025          | 2024-05-09 | GUIADA     |        20 |                      5 |                  5 |                     2 |                5.00 |
+| EXC0042          | 2024-10-09 | AUTOGUIADA |        15 |                      5 |                 10 |                     3 |                4.00 |
+| EXC0052          | 2024-11-12 | GUIADA     |        11 |                      5 |                  5 |                     3 |                4.33 |
+| EXC0060          | 2024-12-10 | AUTOGUIADA |        14 |                      5 |                  5 |                     2 |                4.00 |
+| EXC0068          | 2025-01-07 | EDUCATIVA  |        22 |                      5 |                  5 |                     3 |                3.00 |
+| EXC0076          | 2025-02-19 | EDUCATIVA  |        13 |                      5 |                  7 |                     4 |                4.50 |
+| EXC0077          | 2025-03-10 | EDUCATIVA  |        19 |                      5 |                  5 |                     4 |                4.25 |
+| EXC0081          | 2025-03-29 | GUIADA     |        16 |                      5 |                  5 |                     5 |                3.80 |
+| EXC0083          | 2025-04-12 | NOCTURNA   |         7 |                      5 |                  7 |                     4 |                3.00 |
+| EXC0085          | 2025-04-21 | AUTOGUIADA |        21 |                      5 |                  6 |                     4 |                4.50 |
+| EXC0098          | 2025-06-24 | EDUCATIVA  |        23 |                      5 |                  5 |                     3 |                3.33 |
+| EXC0106          | 2025-08-25 | GUIADA     |        17 |                      5 |                  5 |                     5 |                3.00 |
+| EXC0107          | 2025-08-26 | GUIADA     |        14 |                      5 |                  7 |                     2 |                5.00 |
+| EXC0114          | 2025-09-22 | GUIADA     |        15 |                      5 |                  8 |                     3 |                2.33 |
+| EXC0122          | 2025-11-02 | EDUCATIVA  |        23 |                      5 |                 11 |                     4 |                4.50 |
+| EXC0129          | 2025-12-06 | AUTOGUIADA |        29 |                      5 |                  8 |                     2 |                3.00 |
+| EXC0134          | 2025-12-22 | AUTOGUIADA |        26 |                      5 |                  5 |                     3 |                3.00 |
+| EXC0152          | 2026-04-01 | GUIADA     |        19 |                      5 |                  5 |                     2 |                4.50 |
+| EXC0153          | 2026-04-08 | AUTOGUIADA |        15 |                      5 |                  6 |                     4 |                3.00 |
+| EXC0155          | 2026-04-27 | GUIADA     |        18 |                      5 |                  7 |                     5 |                4.80 |
+| EXC0161          | 2026-05-29 | AUTOGUIADA |        13 |                      5 |                  5 |                     3 |                4.00 |
+| EXC0176          | 2026-09-14 | GUIADA     |        18 |                      5 |                  8 |                     5 |                4.00 |
+| EXC0007          | 2024-02-03 | GUIADA     |        13 |                      4 |                  4 |                     3 |                3.67 |
+| EXC0012          | 2024-03-18 | GUIADA     |        14 |                      4 |                  5 |                     3 |                4.33 |
+| EXC0022          | 2024-04-10 | GUIADA     |        15 |                      4 |                  9 |                     1 |                5.00 |
+| EXC0027          | 2024-05-12 | GUIADA     |        16 |                      4 |                  6 |                     3 |                4.00 |
+| EXC0041          | 2024-10-02 | GUIADA     |        12 |                      4 |                  4 |                     0 |                NULL |
+| EXC0044          | 2024-10-11 | EDUCATIVA  |        22 |                      4 |                  6 |                     4 |                4.25 |
+| EXC0046          | 2024-10-17 | GUIADA     |        17 |                      4 |                  5 |                     1 |                5.00 |
+| EXC0056          | 2024-11-22 | EDUCATIVA  |        18 |                      4 |                  6 |                     2 |                4.00 |
+| EXC0066          | 2025-01-07 | GUIADA     |        15 |                      4 |                  5 |                     3 |                3.33 |
+| EXC0089          | 2025-05-06 | GUIADA     |        20 |                      4 |                  4 |                     3 |                3.00 |
+| EXC0100          | 2025-06-30 | NOCTURNA   |        12 |                      4 |                  6 |                     2 |                4.50 |
+| EXC0123          | 2025-11-09 | GUIADA     |        17 |                      4 |                  4 |                     3 |                3.33 |
+| EXC0125          | 2025-11-12 | AUTOGUIADA |        13 |                      4 |                  7 |                     2 |                4.50 |
+| EXC0128          | 2025-12-06 | GUIADA     |        11 |                      4 |                  6 |                     3 |                4.67 |
+| EXC0156          | 2026-04-30 | GUIADA     |        16 |                      4 |                  5 |                     4 |                3.00 |
+| EXC0168          | 2026-08-11 | EDUCATIVA  |        20 |                      4 |                  5 |                     3 |                4.00 |
+| EXC0175          | 2026-09-10 | NOCTURNA   |        12 |                      4 |                 10 |                     1 |                4.00 |
+| EXC0178          | 2026-09-16 | GUIADA     |        20 |                      4 |                  4 |                     3 |                4.00 |
+| EXC0004          | 2024-01-17 | GUIADA     |         8 |                      3 |                  3 |                     3 |                5.00 |
+| EXC0008          | 2024-02-04 | EDUCATIVA  |        19 |                      3 |                  4 |                     2 |                3.50 |
+| EXC0019          | 2024-03-31 | EDUCATIVA  |        10 |                      3 |                  6 |                     3 |                3.33 |
+| EXC0024          | 2024-05-06 | AUTOGUIADA |        14 |                      3 |                  4 |                     2 |                3.50 |
+| EXC0031          | 2024-06-13 | GUIADA     |         9 |                      3 |                  5 |                     1 |                4.00 |
+| EXC0033          | 2024-08-09 | EDUCATIVA  |        12 |                      3 |                  3 |                     1 |                5.00 |
+| EXC0036          | 2024-08-16 | EDUCATIVA  |        16 |                      3 |                  3 |                     2 |                2.00 |
+| EXC0039          | 2024-09-11 | EDUCATIVA  |        11 |                      3 |                  3 |                     3 |                4.00 |
+| EXC0040          | 2024-09-23 | NOCTURNA   |        12 |                      3 |                  4 |                     3 |                3.67 |
+| EXC0045          | 2024-10-16 | GUIADA     |         8 |                      3 |                  3 |                     3 |                3.67 |
+| EXC0054          | 2024-11-14 | AUTOGUIADA |        15 |                      3 |                  4 |                     3 |                5.00 |
+| EXC0061          | 2024-12-10 | NOCTURNA   |        10 |                      3 |                  4 |                     2 |                4.00 |
+| EXC0065          | 2024-12-27 | NOCTURNA   |         8 |                      3 |                  5 |                     1 |                5.00 |
+| EXC0078          | 2025-03-12 | GUIADA     |        16 |                      3 |                  3 |                     3 |                4.33 |
+| EXC0082          | 2025-03-30 | GUIADA     |        15 |                      3 |                  6 |                     2 |                4.00 |
+| EXC0084          | 2025-04-13 | NOCTURNA   |        11 |                      3 |                  6 |                     1 |                5.00 |
+| EXC0086          | 2025-05-01 | GUIADA     |         9 |                      3 |                  4 |                     2 |                2.00 |
+| EXC0091          | 2025-05-18 | AUTOGUIADA |        28 |                      3 |                  4 |                     2 |                3.00 |
+| EXC0095          | 2025-06-08 | AUTOGUIADA |        14 |                      3 |                  3 |                     3 |                4.67 |
+| EXC0103          | 2025-07-20 | GUIADA     |        13 |                      3 |                  4 |                     2 |                5.00 |
+| EXC0113          | 2025-09-14 | GUIADA     |        15 |                      3 |                  5 |                     2 |                3.50 |
+| EXC0130          | 2025-12-14 | NOCTURNA   |         9 |                      3 |                  5 |                     2 |                3.50 |
+| EXC0135          | 2025-12-22 | EDUCATIVA  |        20 |                      3 |                  6 |                     2 |                4.50 |
+| EXC0139          | 2026-01-14 | AUTOGUIADA |        20 |                      3 |                  4 |                     2 |                4.50 |
+| EXC0141          | 2026-01-14 | NOCTURNA   |         6 |                      3 |                  3 |                     1 |                3.00 |
+| EXC0144          | 2026-02-06 | GUIADA     |         8 |                      3 |                  5 |                     3 |                3.67 |
+| EXC0150          | 2026-03-17 | AUTOGUIADA |        14 |                      3 |                  7 |                     3 |                4.33 |
+| EXC0151          | 2026-03-19 | GUIADA     |        20 |                      3 |                  4 |                     0 |                NULL |
+| EXC0165          | 2026-07-26 | EDUCATIVA  |        11 |                      3 |                  4 |                     0 |                NULL |
+| EXC0169          | 2026-08-16 | GUIADA     |        13 |                      3 |                  3 |                     3 |                2.67 |
+| EXC0177          | 2026-09-15 | GUIADA     |        17 |                      3 |                  4 |                     1 |                4.00 |
+| EXC0179          | 2026-10-18 | GUIADA     |        19 |                      3 |                  4 |                     2 |                4.00 |
+| EXC0011          | 2024-02-15 | NOCTURNA   |        11 |                      2 |                  2 |                     2 |                3.00 |
+| EXC0020          | 2024-04-02 | AUTOGUIADA |        14 |                      2 |                  4 |                     1 |                5.00 |
+| EXC0030          | 2024-06-11 | GUIADA     |        16 |                      2 |                  2 |                     1 |                3.00 |
+| EXC0035          | 2024-08-15 | AUTOGUIADA |        24 |                      2 |                  4 |                     1 |                2.00 |
+| EXC0047          | 2024-10-31 | GUIADA     |        15 |                      2 |                  2 |                     1 |                4.00 |
+| EXC0049          | 2024-11-06 | GUIADA     |        20 |                      2 |                  3 |                     1 |                4.00 |
+| EXC0069          | 2025-01-12 | EDUCATIVA  |        16 |                      2 |                  3 |                     0 |                NULL |
+| EXC0073          | 2025-02-08 | GUIADA     |         9 |                      2 |                  2 |                     1 |                4.00 |
+| EXC0099          | 2025-06-27 | GUIADA     |        11 |                      2 |                  4 |                     2 |                5.00 |
+| EXC0102          | 2025-07-13 | EDUCATIVA  |        13 |                      2 |                  2 |                     2 |                4.50 |
+| EXC0104          | 2025-08-03 | GUIADA     |         8 |                      2 |                  2 |                     2 |                4.00 |
+| EXC0108          | 2025-08-31 | GUIADA     |        20 |                      2 |                  3 |                     0 |                NULL |
+| EXC0116          | 2025-10-04 | NOCTURNA   |         8 |                      2 |                  2 |                     1 |                4.00 |
+| EXC0162          | 2026-06-01 | GUIADA     |         8 |                      2 |                  2 |                     0 |                NULL |
+| EXC0164          | 2026-07-17 | AUTOGUIADA |        18 |                      2 |                  4 |                     0 |                NULL |
+| EXC0166          | 2026-08-04 | NOCTURNA   |        12 |                      2 |                  3 |                     2 |                4.50 |
+| EXC0170          | 2026-08-22 | NOCTURNA   |        11 |                      2 |                  2 |                     1 |                3.00 |
+| EXC0181          | 2026-11-03 | EDUCATIVA  |        19 |                      2 |                  3 |                     1 |                3.00 |
+| EXC0005          | 2024-01-20 | GUIADA     |         8 |                      1 |                  4 |                     0 |                NULL |
+| EXC0013          | 2024-03-18 | GUIADA     |        12 |                      1 |                  1 |                     1 |                5.00 |
+| EXC0023          | 2024-04-15 | GUIADA     |        10 |                      1 |                  1 |                     0 |                NULL |
+| EXC0070          | 2025-01-13 | NOCTURNA   |         9 |                      1 |                  3 |                     0 |                NULL |
+| EXC0079          | 2025-03-20 | GUIADA     |         9 |                      1 |                  2 |                     0 |                NULL |
+| EXC0087          | 2025-05-03 | NOCTURNA   |         8 |                      1 |                  2 |                     1 |                3.00 |
+| EXC0090          | 2025-05-12 | EDUCATIVA  |        15 |                      1 |                  4 |                     1 |                4.00 |
+| EXC0094          | 2025-05-29 | EDUCATIVA  |        16 |                      1 |                  1 |                     1 |                4.00 |
+| EXC0097          | 2025-06-14 | EDUCATIVA  |        13 |                      1 |                  1 |                     0 |                NULL |
+| EXC0101          | 2025-07-08 | GUIADA     |         9 |                      1 |                  1 |                     0 |                NULL |
+| EXC0117          | 2025-10-06 | NOCTURNA   |         9 |                      1 |                  1 |                     1 |                3.00 |
+| EXC0118          | 2025-10-12 | NOCTURNA   |        10 |                      1 |                  2 |                     0 |                NULL |
+| EXC0124          | 2025-11-10 | GUIADA     |         9 |                      1 |                  4 |                     1 |                4.00 |
+| EXC0127          | 2025-12-02 | NOCTURNA   |         6 |                      1 |                  2 |                     0 |                NULL |
+| EXC0138          | 2026-01-04 | GUIADA     |        12 |                      1 |                  2 |                     1 |                3.00 |
+| EXC0143          | 2026-01-18 | GUIADA     |        18 |                      1 |                  3 |                     1 |                3.00 |
+| EXC0147          | 2026-02-28 | NOCTURNA   |         6 |                      1 |                  2 |                     1 |                4.00 |
+| EXC0157          | 2026-05-01 | GUIADA     |        14 |                      1 |                  1 |                     1 |                4.00 |
+| EXC0158          | 2026-05-27 | NOCTURNA   |         8 |                      1 |                  2 |                     1 |                4.00 |
+| EXC0180          | 2026-10-26 | GUIADA     |        14 |                      1 |                  1 |                     1 |                2.00 |
+| EXC0038          | 2024-09-03 | NOCTURNA   |        12 |                      0 |                  1 |                     0 |                NULL |
+| EXC0096          | 2025-06-14 | GUIADA     |        12 |                      0 |                  1 |                     0 |                NULL |
+| EXC0109          | 2025-09-01 | NOCTURNA   |         9 |                      0 |                  1 |                     0 |                NULL |
+| EXC0126          | 2025-11-15 | GUIADA     |        15 |                      0 |                  1 |                     0 |                NULL |
++------------------+------------+------------+-----------+------------------------+--------------------+-----------------------+---------------------+
+182 rows in set
+
+--------------
+CALL sp_r4_parques_excursiones_visitantes('2025-01-01', '2025-12-31')
+--------------
+
++------------------------+-----------------------+-------------+------------+---------------+
+| parque                 | areas_con_excursiones | excursiones | visitantes | inscripciones |
++------------------------+-----------------------+-------------+------------+---------------+
+| Villarrica             |                     4 |          13 |         76 |           111 |
+| La Campana             |                     3 |          10 |         28 |            40 |
+| Pan de Azúcar          |                     3 |           7 |         29 |            42 |
+| Vicente Pérez Rosales  |                     3 |           6 |         24 |            29 |
+| Torres del Paine       |                     1 |           5 |         58 |            64 |
+| Conguillío             |                     2 |           5 |         31 |            32 |
+| Queulat                |                     3 |           5 |         13 |            23 |
+| Puyehue                |                     2 |           4 |         30 |            34 |
+| Chiloé                 |                     1 |           4 |         11 |            16 |
+| Nahuelbuta             |                     2 |           3 |         26 |            27 |
+| Radal Siete Tazas      |                     1 |           3 |         18 |            26 |
+| Lauca                  |                     2 |           3 |         14 |            15 |
+| Huerquehue             |                     1 |           1 |          8 |             8 |
+| Alerce Andino          |                     1 |           1 |          3 |             3 |
+| Bosque Fray Jorge      |                     1 |           1 |          0 |             1 |
++------------------------+-----------------------+-------------+------------+---------------+
+15 rows in set
+
+Query OK, 0 rows affected
+
+--------------
+SELECT * FROM vw_r5_tasa_asistencia_area WHERE inscripciones >= 10 ORDER BY porcentaje_asistencia DESC
+--------------
+
++------------------------+----------+--------------------+-------------+---------------+-------------+-----------------------+
+| parque                 | nro_area | area               | excursiones | inscripciones | asistencias | porcentaje_asistencia |
++------------------------+----------+--------------------+-------------+---------------+-------------+-----------------------+
+| Pichasca               |        3 | Glaciar            |           2 |            13 |          13 |                100.00 |
+| Lauca                  |        3 | Costa              |           3 |            16 |          16 |                100.00 |
+| Nahuelbuta             |        1 | Valle Central      |           4 |            30 |          29 |                 96.67 |
+| Conguillío             |        2 | Laguna Verde       |           6 |            51 |          48 |                 94.12 |
+| La Campana             |        1 | Costa              |           4 |            28 |          26 |                 92.86 |
+| Torres del Paine       |        1 | Mirador Norte      |          10 |            86 |          79 |                 91.86 |
+| Huerquehue             |        1 | Quebrada Alta      |           2 |            12 |          11 |                 91.67 |
+| La Campana             |        4 | Glaciar            |          12 |            82 |          75 |                 91.46 |
+| Nahuelbuta             |        4 | Quebrada Alta      |           2 |            11 |          10 |                 90.91 |
+| Conguillío             |        3 | Humedal            |           5 |            20 |          18 |                 90.00 |
+| Vicente Pérez Rosales  |        1 | Mirador Norte      |           7 |            45 |          40 |                 88.89 |
+| Vicente Pérez Rosales  |        2 | Quebrada Alta      |           8 |            80 |          70 |                 87.50 |
+| Puyehue                |        1 | Valle Central      |          10 |            97 |          84 |                 86.60 |
+| Vicente Pérez Rosales  |        4 | Sendero del Bosque |           8 |            45 |          38 |                 84.44 |
+| Villarrica             |        4 | Pampa              |           9 |            89 |          71 |                 79.78 |
+| Puyehue                |        2 | Quebrada Alta      |           5 |            24 |          18 |                 75.00 |
+| Villarrica             |        3 | Humedal            |          10 |            56 |          42 |                 75.00 |
+| Chiloé                 |        1 | Sector Lago        |           8 |            46 |          34 |                 73.91 |
+| Radal Siete Tazas      |        1 | Sector Volcán      |           5 |            34 |          25 |                 73.53 |
+| Pan de Azúcar          |        2 | Laguna Verde       |           7 |            42 |          30 |                 71.43 |
+| La Campana             |        3 | Laguna Verde       |           5 |            24 |          17 |                 70.83 |
+| Villarrica             |        2 | Costa              |           3 |            16 |          11 |                 68.75 |
+| Queulat                |        4 | Sector Lago        |           3 |            21 |          14 |                 66.67 |
+| Pan de Azúcar          |        1 | Sendero del Bosque |           5 |            37 |          24 |                 64.86 |
+| Pan de Azúcar          |        3 | Cascadas           |           5 |            29 |          18 |                 62.07 |
+| Queulat                |        3 | Sector Volcán      |           3 |            34 |          21 |                 61.76 |
+| Queulat                |        2 | Cascadas           |           6 |            55 |          33 |                 60.00 |
+| Villarrica             |        1 | Cascadas           |           8 |            62 |          36 |                 58.06 |
+| La Campana             |        2 | Mirador Norte      |           4 |            15 |           8 |                 53.33 |
++------------------------+----------+--------------------+-------------+---------------+-------------+-----------------------+
+29 rows in set
+
+--------------
+SELECT * FROM vw_r6_especies_mayor_cantidad WHERE ranking_en_area = 1 ORDER BY parque, area
+--------------
+
++------------------------+----------+--------------------+------------+---------------------+--------------------------+-----------------------+------------------------+-----------------+
+| parque                 | nro_area | area               | id_recurso | nombre_comun        | nombre_cientifico        | cantidad_inventariada | fecha_ultimo_monitoreo | ranking_en_area |
++------------------------+----------+--------------------+------------+---------------------+--------------------------+-----------------------+------------------------+-----------------+
+| Alerce Andino          |        1 | Cordón Sur         |         34 | Zarzamora           | Rubus ulmifolius         |                  5865 | 2026-09-04             |               1 |
+| Alerce Andino          |        3 | Laguna Verde       |          7 | Canelo              | Drimys winteri           |                  1525 | 2024-03-13             |               1 |
+| Alerce Andino          |        2 | Sector Volcán      |         11 | Quillay             | Quillaja saponaria       |                  2986 | 2026-10-16             |               1 |
+| Bosque Fray Jorge      |        2 | Cordón Sur         |         10 | Peumo               | Cryptocarya alba         |                  4693 | 2025-03-13             |               1 |
+| Bosque Fray Jorge      |        1 | Mirador Norte      |         59 | Ratón chinchilla    | Abrocoma bennettii       |                    74 | 2025-02-12             |               1 |
+| Chiloé                 |        2 | Humedal            |          6 | Palma chilena       | Jubaea chilensis         |                  3775 | 2026-09-30             |               1 |
+| Chiloé                 |        1 | Sector Lago        |         14 | Calafate            | Berberis microphylla     |                  2363 | 2025-03-08             |               1 |
+| Conguillío             |        4 | Costa              |         17 | Siete camisas       | Escallonia rubra         |                  5587 | 2024-11-20             |               1 |
+| Conguillío             |        3 | Humedal            |         31 | Copihue             | Lapageria rosea          |                  2025 | 2024-11-09             |               1 |
+| Conguillío             |        2 | Laguna Verde       |          5 | Alerce              | Fitzroya cupressoides    |                  4064 | 2026-01-22             |               1 |
+| Conguillío             |        1 | Quebrada Alta      |         27 | Helecho película    | Hymenophyllum pectinatum |                  2024 | 2025-10-31             |               1 |
+| Huerquehue             |        2 | Humedal            |         38 | Huemul              | Hippocamelus bisulcus    |                   204 | 2026-02-21             |               1 |
+| Huerquehue             |        1 | Quebrada Alta      |         26 | Costilla de vaca    | Blechnum chilense        |                  5585 | 2025-02-24             |               1 |
+| La Campana             |        1 | Costa              |         19 | Queñoa              | Polylepis tarapacana     |                  4289 | NULL                   |               1 |
+| La Campana             |        4 | Glaciar            |         19 | Queñoa              | Polylepis tarapacana     |                  3213 | 2026-06-12             |               1 |
+| La Campana             |        3 | Laguna Verde       |          4 | Ñirre               | Nothofagus antarctica    |                  4317 | 2024-02-12             |               1 |
+| La Campana             |        2 | Mirador Norte      |          9 | Olivillo            | Aextoxicon punctatum     |                  4887 | NULL                   |               1 |
+| Lauca                  |        2 | Bosque Antiguo     |         34 | Zarzamora           | Rubus ulmifolius         |                  2326 | 2026-02-09             |               1 |
+| Lauca                  |        3 | Costa              |         98 | Huiro negro         | Lessonia spicata         |                   412 | NULL                   |               1 |
+| Lauca                  |        1 | Mirador Norte      |         13 | Notro               | Embothrium coccineum     |                  4496 | 2025-06-25             |               1 |
+| Lauca                  |        4 | Valle Central      |         87 | Digüeñe             | Cyttaria darwinii        |                   398 | 2026-01-29             |               1 |
+| Nahuelbuta             |        4 | Quebrada Alta      |         32 | Botellita           | Mitraria coccinea        |                  4098 | 2024-07-25             |               1 |
+| Nahuelbuta             |        2 | Sector Lago        |         17 | Siete camisas       | Escallonia rubra         |                  5791 | 2024-06-01             |               1 |
+| Nahuelbuta             |        3 | Sendero del Bosque |          5 | Alerce              | Fitzroya cupressoides    |                  1211 | 2024-07-16             |               1 |
+| Nahuelbuta             |        1 | Valle Central      |         12 | Litre               | Lithraea caustica        |                   780 | 2026-06-02             |               1 |
+| Pan de Azúcar          |        3 | Cascadas           |         14 | Calafate            | Berberis microphylla     |                  1284 | 2025-10-14             |               1 |
+| Pan de Azúcar          |        2 | Laguna Verde       |          4 | Ñirre               | Nothofagus antarctica    |                  5814 | 2026-07-10             |               1 |
+| Pan de Azúcar          |        1 | Sendero del Bosque |         34 | Zarzamora           | Rubus ulmifolius         |                  3767 | 2024-12-14             |               1 |
+| Pichasca               |        1 | Cascadas           |         23 | Añañuca             | Rhodophiala phycelloides |                  5185 | 2026-03-30             |               1 |
+| Pichasca               |        3 | Glaciar            |          6 | Palma chilena       | Jubaea chilensis         |                  3195 | 2026-04-11             |               1 |
+| Pichasca               |        2 | Sector Volcán      |         31 | Copihue             | Lapageria rosea          |                  3018 | 2025-01-24             |               1 |
+| Puyehue                |        2 | Quebrada Alta      |         22 | Orquídea porcelana  | Chloraea magellanica     |                  2703 | 2025-10-22             |               1 |
+| Puyehue                |        1 | Valle Central      |          5 | Alerce              | Fitzroya cupressoides    |                  3893 | 2025-04-12             |               1 |
+| Queulat                |        2 | Cascadas           |         10 | Peumo               | Cryptocarya alba         |                  4825 | 2024-01-02             |               1 |
+| Queulat                |        1 | Humedal            |         12 | Litre               | Lithraea caustica        |                  4316 | NULL                   |               1 |
+| Queulat                |        4 | Sector Lago        |         19 | Queñoa              | Polylepis tarapacana     |                  5924 | 2026-05-13             |               1 |
+| Queulat                |        3 | Sector Volcán      |          9 | Olivillo            | Aextoxicon punctatum     |                  4120 | 2026-10-29             |               1 |
+| Radal Siete Tazas      |        2 | Bosque Antiguo     |         33 | Pino insigne        | Pinus radiata            |                  2639 | 2025-07-18             |               1 |
+| Radal Siete Tazas      |        1 | Sector Volcán      |         21 | Amancay             | Alstroemeria aurea       |                  1750 | 2025-09-23             |               1 |
+| Torres del Paine       |        2 | Glaciar            |         30 | Copao               | Eulychnia breviflora     |                   876 | 2026-10-10             |               1 |
+| Torres del Paine       |        1 | Mirador Norte      |         16 | Quila               | Chusquea quila           |                  4376 | 2025-12-18             |               1 |
+| Vicente Pérez Rosales  |        1 | Mirador Norte      |         27 | Helecho película    | Hymenophyllum pectinatum |                   204 | 2025-12-25             |               1 |
+| Vicente Pérez Rosales  |        2 | Quebrada Alta      |          7 | Canelo              | Drimys winteri           |                  1218 | NULL                   |               1 |
+| Vicente Pérez Rosales  |        3 | Sector Lago        |         14 | Calafate            | Berberis microphylla     |                  3229 | 2025-11-16             |               1 |
+| Vicente Pérez Rosales  |        4 | Sendero del Bosque |          3 | Coigüe              | Nothofagus dombeyi       |                  1992 | 2024-09-07             |               1 |
+| Villarrica             |        1 | Cascadas           |          9 | Olivillo            | Aextoxicon punctatum     |                  3786 | 2025-07-14             |               1 |
+| Villarrica             |        2 | Costa              |         27 | Helecho película    | Hymenophyllum pectinatum |                  1417 | 2026-04-27             |               1 |
+| Villarrica             |        3 | Humedal            |         29 | Quisco              | Echinopsis chiloensis    |                  5967 | 2025-01-23             |               1 |
+| Villarrica             |        4 | Pampa              |         20 | Nalca               | Gunnera tinctoria        |                  1035 | 2024-07-22             |               1 |
++------------------------+----------+--------------------+------------+---------------------+--------------------------+-----------------------+------------------------+-----------------+
+49 rows in set
+
+--------------
+SELECT * FROM vw_r7_proyectos_participacion ORDER BY investigadores DESC, especies_estudiadas DESC
+--------------
+
++-------------+------------------------------------------------------------------+-------------+----------------+---------------------+------------------+
+| id_proyecto | proyecto                                                         | estado      | investigadores | especies_estudiadas | areas_estudiadas |
++-------------+------------------------------------------------------------------+-------------+----------------+---------------------+------------------+
+|           2 | Erosión y conservación de magnetita en Lauca                     | EN_CURSO    |              7 |                   7 |                3 |
+|          28 | Erosión y conservación de andesita en Nahuelbuta                 | EN_CURSO    |              6 |                   5 |                1 |
+|          23 | Monitoreo de copao en Torres del Paine                           | EN_CURSO    |              6 |                   5 |                1 |
+|          22 | Fenología de culebra de cola larga en Vicente Pérez Rosales      | EN_CURSO    |              6 |                   4 |                2 |
+|           5 | Restauración del hábitat de ratón chinchilla en Alerce Andino    | FINALIZADO  |              5 |                   7 |                3 |
+|          12 | Erosión y conservación de calcita en Villarrica                  | EN_CURSO    |              5 |                   5 |                3 |
+|           7 | Genética de quique en Lauca                                      | FINALIZADO  |              5 |                   3 |                1 |
+|          20 | Impacto del turismo sobre barba de viejo en Alerce Andino        | EN_CURSO    |              5 |                   2 |                3 |
+|          17 | Cartografía de afloramientos de cuarzo en Lauca                  | EN_CURSO    |              4 |                   6 |                2 |
+|          29 | Restauración del hábitat de siete camisas en Puyehue             | EN_CURSO    |              4 |                   6 |                2 |
+|          25 | Impacto del turismo sobre ñirre en La Campana                    | PLANIFICADO |              4 |                   5 |                1 |
+|          16 | Monitoreo de quisco en Conguillío                                | EN_CURSO    |              4 |                   3 |                1 |
+|          21 | Conservación de notro en La Campana                              | EN_CURSO    |              4 |                   3 |                3 |
+|          13 | Cartografía de afloramientos de basalto en Lauca                 | SUSPENDIDO  |              4 |                   2 |                3 |
+|          24 | Conservación de copao en Torres del Paine                        | EN_CURSO    |              3 |                   7 |                2 |
+|          14 | Monitoreo de trucha arcoíris en Puyehue                          | FINALIZADO  |              3 |                   6 |                2 |
+|          26 | Conservación de zorro culpeo en Queulat                          | FINALIZADO  |              3 |                   6 |                3 |
+|           3 | Monitoreo de arrayán en Pan de Azúcar                            | FINALIZADO  |              3 |                   6 |                1 |
+|           6 | Fenología de ñandú en Queulat                                    | SUSPENDIDO  |              3 |                   4 |                1 |
+|          27 | Fenología de pino insigne en Chiloé                              | SUSPENDIDO  |              3 |                   3 |                2 |
+|          18 | Erosión y conservación de atacamita en Alerce Andino             | FINALIZADO  |              3 |                   2 |                2 |
+|          30 | Fenología de ratón chinchilla en Lauca                           | SUSPENDIDO  |              3 |                   2 |                2 |
+|           1 | Conservación de copihue en Nahuelbuta                            | FINALIZADO  |              2 |                   6 |                2 |
+|          10 | Genética de ñirre en Pan de Azúcar                               | FINALIZADO  |              2 |                   3 |                2 |
+|          11 | Dinámica poblacional de quila en Torres del Paine                | EN_CURSO    |              2 |                   2 |                1 |
++-------------+------------------------------------------------------------------+-------------+----------------+---------------------+------------------+
+25 rows in set
+
+--------------
+SELECT * FROM vw_r8_trabajadores_multifuncion ORDER BY cantidad_funciones DESC, trabajador
+--------------
+
++-------------+-----------------------------+---------------------------+--------------------+-----------------------------------------+------------------+------------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
+| rut_persona | trabajador                  | cargo                     | cantidad_funciones | funciones                               | cantidad_parques | parques                            | areas                                                                                                                           |
++-------------+-----------------------------+---------------------------+--------------------+-----------------------------------------+------------------+------------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
+| 15620965-1  | Edison Robles               | Investigador              |                  3 | CONSERVACION, GUIA, INVESTIGACION       |                1 | Radal Siete Tazas                  | Radal Siete Tazas / Bosque Antiguo; Radal Siete Tazas / Sector Volcán                                                           |
+| 13626000-6  | Isidora Eliana Ávila        | Guardaparque              |                  3 | GESTION, INVESTIGACION, VIGILANCIA      |                1 | Huerquehue                         | Huerquehue / Humedal; Huerquehue / Quebrada Alta                                                                                |
+| 18371460-0  | Luis Cisterna               | Técnico en conservación   |                  3 | CONSERVACION, GESTION, INVESTIGACION    |                2 | La Campana, Puyehue                | La Campana / Costa; Puyehue / Quebrada Alta; Puyehue / Valle Central                                                            |
+| 16610139-5  | Mirta Elizabeth Águila      | Guardaparque              |                  3 | CONSERVACION, INVESTIGACION, VIGILANCIA |                1 | Chiloé                             | Chiloé / Humedal; Chiloé / Sector Lago                                                                                          |
+| 16263296-5  | Olga Sandra Navarro         | Investigador              |                  3 | CONSERVACION, GUIA, INVESTIGACION       |                2 | Alerce Andino, La Campana          | Alerce Andino / Sector Volcán; La Campana / Costa; La Campana / Glaciar; La Campana / Laguna Verde; La Campana / Mirador Norte  |
+| 12239895-1  | Oscar Jiménez               | Técnico en conservación   |                  3 | CONSERVACION, GUIA, VIGILANCIA          |                2 | Lauca, Queulat                     | Lauca / Bosque Antiguo; Lauca / Costa; Lauca / Mirador Norte; Queulat / Humedal                                                 |
+| 12408503-9  | Pedro Javier Soto           | Guardaparque              |                  3 | GESTION, GUIA, VIGILANCIA               |                1 | Conguillío                         | Conguillío / Costa; Conguillío / Humedal; Conguillío / Laguna Verde; Conguillío / Quebrada Alta                                 |
+| 19089814-8  | Samuel Guillermo Gutiérrez  | Administrador de parque   |                  3 | GESTION, GUIA, INVESTIGACION            |                1 | La Campana                         | La Campana / Glaciar; La Campana / Laguna Verde; La Campana / Mirador Norte                                                     |
+| 19854874-K  | Alexander Bustamante        | Técnico en conservación   |                  2 | CONSERVACION, INVESTIGACION             |                1 | Pichasca                           | Pichasca / Cascadas; Pichasca / Glaciar; Pichasca / Sector Volcán                                                               |
+| 12256081-3  | Alicia Araya                | Investigador              |                  2 | INVESTIGACION, VIGILANCIA               |                2 | Bosque Fray Jorge, La Campana      | Bosque Fray Jorge / Cordón Sur; Bosque Fray Jorge / Mirador Norte; La Campana / Laguna Verde                                    |
+| 12475006-7  | Ana Daniela Rivas           | Administrador de parque   |                  2 | CONSERVACION, GESTION                   |                1 | Lauca                              | Lauca / Bosque Antiguo; Lauca / Valle Central                                                                                   |
+| 18551599-0  | Carmela Castro              | Investigador              |                  2 | GESTION, INVESTIGACION                  |                1 | Conguillío                         | Conguillío / Costa; Conguillío / Humedal; Conguillío / Laguna Verde                                                             |
+| 12499031-9  | Cristian Olmos              | Investigador              |                  2 | GESTION, INVESTIGACION                  |                2 | Huerquehue, Radal Siete Tazas      | Huerquehue / Humedal; Huerquehue / Quebrada Alta; Radal Siete Tazas / Sector Volcán                                             |
+| 18258572-6  | Guillermo Gerson Verdugo    | Guardaparque              |                  2 | GESTION, VIGILANCIA                     |                1 | Bosque Fray Jorge                  | Bosque Fray Jorge / Cordón Sur; Bosque Fray Jorge / Mirador Norte                                                               |
+| 15520869-4  | Irma Karla Castillo         | Administrador de parque   |                  2 | GESTION, GUIA                           |                1 | Chiloé                             | Chiloé / Humedal                                                                                                                |
+| 17496528-5  | Juan Arancibia              | Investigador              |                  2 | GESTION, INVESTIGACION                  |                1 | Conguillío                         | Conguillío / Costa; Conguillío / Humedal; Conguillío / Laguna Verde                                                             |
+| 19014816-5  | María Araya                 | Investigador              |                  2 | GESTION, INVESTIGACION                  |                2 | Bosque Fray Jorge, Pichasca        | Bosque Fray Jorge / Cordón Sur; Bosque Fray Jorge / Mirador Norte; Pichasca / Cascadas                                          |
+| 17487217-1  | María Fernanda Jara         | Guía de turismo           |                  2 | CONSERVACION, GUIA                      |                1 | Pichasca                           | Pichasca / Cascadas; Pichasca / Glaciar                                                                                         |
+| 15919412-4  | Nicole Clara López          | Guía de turismo           |                  2 | GUIA, INVESTIGACION                     |                2 | Puyehue, Radal Siete Tazas         | Puyehue / Quebrada Alta; Puyehue / Valle Central; Radal Siete Tazas / Bosque Antiguo                                            |
+| 19662011-7  | Pamela Peña                 | Guía de turismo           |                  2 | GUIA, VIGILANCIA                        |                1 | Villarrica                         | Villarrica / Cascadas; Villarrica / Costa; Villarrica / Humedal; Villarrica / Pampa                                             |
+| 12821361-9  | Patricio Matías Sánchez     | Técnico en conservación   |                  2 | CONSERVACION, INVESTIGACION             |                1 | Alerce Andino                      | Alerce Andino / Cordón Sur; Alerce Andino / Laguna Verde; Alerce Andino / Sector Volcán                                         |
+| 8231385-0   | Ramón Acuña                 | Investigador              |                  2 | INVESTIGACION, VIGILANCIA               |                1 | La Campana                         | La Campana / Laguna Verde; La Campana / Mirador Norte                                                                           |
+| 10845545-4  | Raúl Córdova                | Guardaparque              |                  2 | INVESTIGACION, VIGILANCIA               |                2 | Lauca, Pichasca                    | Lauca / Mirador Norte; Pichasca / Sector Volcán                                                                                 |
+| 17767665-9  | Ricardo Emilio Flores       | Guardaparque              |                  2 | GESTION, VIGILANCIA                     |                1 | La Campana                         | La Campana / Costa; La Campana / Glaciar; La Campana / Laguna Verde                                                             |
+| 18831493-7  | Samuel Arriagada            | Investigador              |                  2 | CONSERVACION, INVESTIGACION             |                2 | Chiloé, Queulat                    | Chiloé / Sector Lago; Queulat / Cascadas; Queulat / Humedal; Queulat / Sector Volcán                                            |
+| 18114939-6  | Sergio Gallardo             | Guía de turismo           |                  2 | GESTION, GUIA                           |                1 | Huerquehue                         | Huerquehue / Humedal; Huerquehue / Quebrada Alta                                                                                |
+| 9003736-6   | Silvia Quijada              | Guardaparque              |                  2 | CONSERVACION, VIGILANCIA                |                2 | Pan de Azúcar, Pichasca            | Pan de Azúcar / Laguna Verde; Pichasca / Cascadas; Pichasca / Glaciar; Pichasca / Sector Volcán                                 |
+| 19814649-8  | Soledad Madariaga           | Guía de turismo           |                  2 | GUIA, VIGILANCIA                        |                3 | Alerce Andino, Chiloé, Villarrica  | Alerce Andino / Cordón Sur; Chiloé / Sector Lago; Villarrica / Costa; Villarrica / Pampa                                        |
+| 10597082-K  | Sylvia Carolina Maldonado   | Técnico en conservación   |                  2 | CONSERVACION, GUIA                      |                1 | Torres del Paine                   | Torres del Paine / Glaciar; Torres del Paine / Mirador Norte                                                                    |
++-------------+-----------------------------+---------------------------+--------------------+-----------------------------------------+------------------+------------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
+29 rows in set
+
+--------------
+CALL sp_r9_excursiones_sobre_promedio_parque(1959, 1, '2024-01-01', '2026-11-10')
+--------------
+
++------------------+---------------+------------------+------------+------------+------------+-----------------+
+| parque           | area          | codigo_excursion | fecha      | modalidad  | visitantes | promedio_parque |
++------------------+---------------+------------------+------------+------------+------------+-----------------+
+| Torres del Paine | Mirador Norte | EXC0092          | 2025-05-19 | AUTOGUIADA |         28 |            7.90 |
+| Torres del Paine | Mirador Norte | EXC0075          | 2025-02-13 | GUIADA     |         11 |            7.90 |
+| Torres del Paine | Mirador Norte | EXC0105          | 2025-08-14 | GUIADA     |         10 |            7.90 |
++------------------+---------------+------------------+------------+------------+------------+-----------------+
+3 rows in set
+
+Query OK, 0 rows affected
+
+--------------
+CALL sp_r9_excursiones_sobre_promedio_parque(NULL, NULL, '2025-01-01', '2025-12-31')
+--------------
+
++------------------------+--------------------+------------------+------------+------------+------------+-----------------+
+| parque                 | area               | codigo_excursion | fecha      | modalidad  | visitantes | promedio_parque |
++------------------------+--------------------+------------------+------------+------------+------------+-----------------+
+| Chiloé                 | Sector Lago        | EXC0083          | 2025-04-12 | NOCTURNA   |          5 |            2.75 |
+| Chiloé                 | Sector Lago        | EXC0082          | 2025-03-30 | GUIADA     |          3 |            2.75 |
+| Conguillío             | Laguna Verde       | EXC0120          | 2025-10-22 | GUIADA     |          9 |            6.20 |
+| Conguillío             | Laguna Verde       | EXC0110          | 2025-09-03 | EDUCATIVA  |          9 |            6.20 |
+| La Campana             | Laguna Verde       | EXC0067          | 2025-01-07 | GUIADA     |          6 |            2.80 |
+| La Campana             | Glaciar            | EXC0112          | 2025-09-09 | GUIADA     |          6 |            2.80 |
+| La Campana             | Mirador Norte      | EXC0135          | 2025-12-22 | EDUCATIVA  |          3 |            2.80 |
+| La Campana             | Laguna Verde       | EXC0084          | 2025-04-13 | NOCTURNA   |          3 |            2.80 |
+| La Campana             | Laguna Verde       | EXC0091          | 2025-05-18 | AUTOGUIADA |          3 |            2.80 |
+| Lauca                  | Costa              | EXC0071          | 2025-01-28 | GUIADA     |          7 |            4.67 |
+| Lauca                  | Costa              | EXC0077          | 2025-03-10 | EDUCATIVA  |          5 |            4.67 |
+| Nahuelbuta             | Valle Central      | EXC0072          | 2025-02-04 | AUTOGUIADA |         18 |            8.67 |
+| Pan de Azúcar          | Laguna Verde       | EXC0133          | 2025-12-20 | AUTOGUIADA |         12 |            4.14 |
+| Pan de Azúcar          | Cascadas           | EXC0136          | 2025-12-23 | AUTOGUIADA |          9 |            4.14 |
+| Puyehue                | Valle Central      | EXC0074          | 2025-02-13 | AUTOGUIADA |         20 |            7.50 |
+| Queulat                | Cascadas           | EXC0115          | 2025-09-26 | EDUCATIVA  |          7 |            2.60 |
+| Queulat                | Sector Lago        | EXC0128          | 2025-12-06 | GUIADA     |          4 |            2.60 |
+| Radal Siete Tazas      | Sector Volcán      | EXC0111          | 2025-09-06 | EDUCATIVA  |          9 |            6.00 |
+| Torres del Paine       | Mirador Norte      | EXC0092          | 2025-05-19 | AUTOGUIADA |         28 |           11.60 |
+| Vicente Pérez Rosales  | Sendero del Bosque | EXC0107          | 2025-08-26 | GUIADA     |          5 |            4.00 |
+| Vicente Pérez Rosales  | Mirador Norte      | EXC0098          | 2025-06-24 | EDUCATIVA  |          5 |            4.00 |
+| Villarrica             | Cascadas           | EXC0132          | 2025-12-19 | EDUCATIVA  |         14 |            5.85 |
+| Villarrica             | Pampa              | EXC0093          | 2025-05-27 | EDUCATIVA  |         11 |            5.85 |
+| Villarrica             | Pampa              | EXC0121          | 2025-10-23 | AUTOGUIADA |         10 |            5.85 |
+| Villarrica             | Pampa              | EXC0080          | 2025-03-28 | AUTOGUIADA |          9 |            5.85 |
+| Villarrica             | Humedal            | EXC0131          | 2025-12-15 | GUIADA     |          6 |            5.85 |
++------------------------+--------------------+------------------+------------+------------+------------+-----------------+
+26 rows in set
+
+Query OK, 0 rows affected
+
+--------------
+CALL sp_r10_especies_sobre_promedio_tipo('ANIMAL')
+--------------
+
++------------+-----------------------+--------------------------+--------------+----------------+-------+---------+----------------------------------------------------------------------------------------------------------------------------+
+| id_recurso | nombre_comun          | nombre_cientifico        | tipo_especie | cantidad_total | areas | parques | presente_en                                                                                                                |
++------------+-----------------------+--------------------------+--------------+----------------+-------+---------+----------------------------------------------------------------------------------------------------------------------------+
+|         45 | Carpintero negro      | Campephilus magellanicus | ANIMAL       |           1504 |     6 |       5 | Lauca, Nahuelbuta, Pan de Azúcar, Puyehue, Torres del Paine                                                                |
+|         59 | Ratón chinchilla      | Abrocoma bennettii       | ANIMAL       |           1482 |     9 |       8 | Alerce Andino, Bosque Fray Jorge, Conguillío, Lauca, Pan de Azúcar, Torres del Paine, Vicente Pérez Rosales, Villarrica    |
+|         60 | Vizcacha              | Lagidium viscacia        | ANIMAL       |           1471 |    10 |       7 | Chiloé, Conguillío, Huerquehue, Pichasca, Puyehue, Queulat, Vicente Pérez Rosales                                          |
+|         40 | Cóndor andino         | Vultur gryphus           | ANIMAL       |           1145 |     7 |       7 | Alerce Andino, Huerquehue, Nahuelbuta, Pan de Azúcar, Queulat, Vicente Pérez Rosales, Villarrica                           |
+|         47 | Flamenco chileno      | Phoenicopterus chilensis | ANIMAL       |           1060 |     5 |       5 | Alerce Andino, Chiloé, Conguillío, La Campana, Queulat                                                                     |
+|         46 | Ñandú                 | Rhea pennata             | ANIMAL       |            762 |     7 |       7 | Alerce Andino, Conguillío, Lauca, Pichasca, Puyehue, Queulat, Vicente Pérez Rosales                                        |
+|         53 | Hued-hued             | Pteroptochos tarnii      | ANIMAL       |            663 |     8 |       6 | Alerce Andino, Chiloé, La Campana, Lauca, Queulat, Radal Siete Tazas                                                       |
+|         52 | Picaflor chico        | Sephanoides sephaniodes  | ANIMAL       |            610 |     7 |       5 | Bosque Fray Jorge, Huerquehue, La Campana, Pan de Azúcar, Torres del Paine                                                 |
+|         39 | Pudú                  | Pudu puda                | ANIMAL       |            602 |     3 |       3 | Alerce Andino, Conguillío, Torres del Paine                                                                                |
+|         57 | Culebra de cola larga | Philodryas chamissonis   | ANIMAL       |            591 |     3 |       3 | Bosque Fray Jorge, La Campana, Vicente Pérez Rosales                                                                       |
+|         51 | Caiquén               | Chloephaga picta         | ANIMAL       |            575 |     4 |       4 | Chiloé, Queulat, Vicente Pérez Rosales, Villarrica                                                                         |
++------------+-----------------------+--------------------------+--------------+----------------+-------+---------+----------------------------------------------------------------------------------------------------------------------------+
+11 rows in set
+
+Query OK, 0 rows affected
+
+--------------
+CALL sp_r10_especies_sobre_promedio_tipo('VEGETAL')
+--------------
+
++------------+---------------+--------------------------+--------------+----------------+-------+---------+-----------------------------------------------------------------------------------------------+
+| id_recurso | nombre_comun  | nombre_cientifico        | tipo_especie | cantidad_total | areas | parques | presente_en                                                                                   |
++------------+---------------+--------------------------+--------------+----------------+-------+---------+-----------------------------------------------------------------------------------------------+
+|         34 | Zarzamora     | Rubus ulmifolius         | VEGETAL      |          18050 |     8 |       6 | Alerce Andino, Lauca, Nahuelbuta, Pan de Azúcar, Queulat, Torres del Paine                    |
+|         19 | Queñoa        | Polylepis tarapacana     | VEGETAL      |          17773 |     6 |       5 | Alerce Andino, La Campana, Queulat, Torres del Paine, Villarrica                              |
+|         17 | Siete camisas | Escallonia rubra         | VEGETAL      |          16462 |     6 |       5 | Conguillío, La Campana, Nahuelbuta, Puyehue, Villarrica                                       |
+|          9 | Olivillo      | Aextoxicon punctatum     | VEGETAL      |          12793 |     3 |       3 | La Campana, Queulat, Villarrica                                                               |
+|          4 | Ñirre         | Nothofagus antarctica    | VEGETAL      |          11868 |     4 |       4 | Conguillío, La Campana, Pan de Azúcar, Vicente Pérez Rosales                                  |
+|         29 | Quisco        | Echinopsis chiloensis    | VEGETAL      |          11583 |     6 |       6 | Conguillío, Huerquehue, Nahuelbuta, Pan de Azúcar, Pichasca, Villarrica                       |
+|         14 | Calafate      | Berberis microphylla     | VEGETAL      |          11497 |     6 |       6 | Chiloé, Lauca, Pan de Azúcar, Queulat, Radal Siete Tazas, Vicente Pérez Rosales               |
+|         10 | Peumo         | Cryptocarya alba         | VEGETAL      |          11483 |     6 |       6 | Bosque Fray Jorge, Chiloé, Huerquehue, Puyehue, Queulat, Torres del Paine                     |
+|          5 | Alerce        | Fitzroya cupressoides    | VEGETAL      |          10725 |     7 |       6 | Conguillío, Nahuelbuta, Pichasca, Puyehue, Queulat, Vicente Pérez Rosales                     |
+|         12 | Litre         | Lithraea caustica        | VEGETAL      |          10696 |     7 |       7 | Bosque Fray Jorge, La Campana, Nahuelbuta, Pichasca, Puyehue, Queulat, Vicente Pérez Rosales  |
+|         18 | Llareta       | Azorella compacta        | VEGETAL      |          10444 |     5 |       4 | Bosque Fray Jorge, Conguillío, Huerquehue, Pan de Azúcar                                      |
+|         13 | Notro         | Embothrium coccineum     | VEGETAL      |          10036 |     6 |       6 | Conguillío, La Campana, Lauca, Nahuelbuta, Pan de Azúcar, Queulat                             |
+|          6 | Palma chilena | Jubaea chilensis         | VEGETAL      |           9976 |     6 |       6 | Bosque Fray Jorge, Chiloé, La Campana, Nahuelbuta, Pichasca, Radal Siete Tazas                |
+|         23 | Añañuca       | Rhodophiala phycelloides | VEGETAL      |           9853 |     5 |       5 | Conguillío, La Campana, Nahuelbuta, Pan de Azúcar, Pichasca                                   |
++------------+---------------+--------------------------+--------------+----------------+-------+---------+-----------------------------------------------------------------------------------------------+
+14 rows in set
+
+Query OK, 0 rows affected
+
+--------------
+CALL sp_r11_visitantes_destacados('2024-01-01', '2026-11-10')
+--------------
+
++-------------+-----------------------------+-------------+---------------------+----------------------+------------------+
+| rut_persona | visitante                   | excursiones | evaluacion_promedio | promedio_excursiones | promedio_general |
++-------------+-----------------------------+-------------+---------------------+----------------------+------------------+
+| 16877015-4  | Noelia Gloria Torres        |          25 |                3.81 |                 4.45 |             3.77 |
+| 24711726-1  | Sergio Nelson Venegas       |          21 |                4.24 |                 4.45 |             3.77 |
+| 15202876-8  | Valentina Anahis Montenegro |          19 |                3.88 |                 4.45 |             3.77 |
+| 26247842-4  | María Guajardo              |          11 |                3.88 |                 4.45 |             3.77 |
+| 15254322-0  | Andrés Muñoz                |           9 |                4.20 |                 4.45 |             3.77 |
+| 20847199-6  | Carolina González           |           9 |                4.00 |                 4.45 |             3.77 |
+| 13427231-7  | Daniel Jorge Aliaga         |           8 |                3.86 |                 4.45 |             3.77 |
+| 23832959-0  | Rosa Aída León              |           8 |                3.80 |                 4.45 |             3.77 |
+| 19384266-6  | Vicente Cornejo             |           7 |                4.50 |                 4.45 |             3.77 |
+| 9852929-2   | Alison Fernanda Zúñiga      |           7 |                4.33 |                 4.45 |             3.77 |
+| 18138940-0  | Rosalba Ampuero             |           7 |                4.33 |                 4.45 |             3.77 |
+| 9087548-5   | Luis Pulgar                 |           7 |                4.00 |                 4.45 |             3.77 |
+| 9652458-7   | Josefina Emilia Romero      |           7 |                4.00 |                 4.45 |             3.77 |
+| 26484116-K  | Damián Hernández            |           7 |                4.00 |                 4.45 |             3.77 |
+| 25052545-1  | Emily Isabel Gómez          |           7 |                4.00 |                 4.45 |             3.77 |
+| 13630355-4  | Gaspar David Canales        |           7 |                3.80 |                 4.45 |             3.77 |
+| 6595199-1   | Sandra Carmen Sáez          |           6 |                5.00 |                 4.45 |             3.77 |
+| 19269256-3  | Claudio José Meza           |           6 |                4.50 |                 4.45 |             3.77 |
+| 13283245-5  | Belén Vásquez               |           6 |                4.50 |                 4.45 |             3.77 |
+| 21534810-5  | Rosario Isabel Montecinos   |           6 |                4.25 |                 4.45 |             3.77 |
+| 6403771-4   | Lucía Leiva                 |           6 |                4.00 |                 4.45 |             3.77 |
+| 13087580-7  | Rocío María Arenas          |           6 |                3.80 |                 4.45 |             3.77 |
+| 19129916-7  | Enrique Moya                |           5 |                5.00 |                 4.45 |             3.77 |
+| 26997188-6  | Estela Valencia             |           5 |                4.75 |                 4.45 |             3.77 |
+| 26331627-4  | Noemí Alarcón               |           5 |                4.50 |                 4.45 |             3.77 |
+| 22746381-3  | Cecilia Martínez            |           5 |                4.50 |                 4.45 |             3.77 |
+| 6283001-8   | Carlos Andrade              |           5 |                4.33 |                 4.45 |             3.77 |
+| 12510996-9  | Ángel Diego Villagrán       |           5 |                4.33 |                 4.45 |             3.77 |
+| 27308091-0  | Fernando Alberto Sepúlveda  |           5 |                4.25 |                 4.45 |             3.77 |
+| 12206993-1  | María Tapia                 |           5 |                4.00 |                 4.45 |             3.77 |
+| 26509310-8  | Esteban Martin Urzúa        |           5 |                4.00 |                 4.45 |             3.77 |
+| 26735866-4  | Isidora Torres              |           5 |                4.00 |                 4.45 |             3.77 |
+| 22229606-4  | Arsenio Romero              |           5 |                4.00 |                 4.45 |             3.77 |
+| 21322853-6  | Sofía Maritza Villegas      |           5 |                4.00 |                 4.45 |             3.77 |
+| 7252530-2   | Benjamín Alegría            |           5 |                4.00 |                 4.45 |             3.77 |
+| 8434970-4   | Verónica Silvana Parra      |           5 |                4.00 |                 4.45 |             3.77 |
+| 18163862-1  | Daniela García              |           5 |                4.00 |                 4.45 |             3.77 |
+| 16618787-7  | María Flores                |           5 |                4.00 |                 4.45 |             3.77 |
+| 23512208-1  | Fabiola Pamela Cofré        |           5 |                3.80 |                 4.45 |             3.77 |
+| 18980791-0  | Sofía María Salazar         |           5 |                3.80 |                 4.45 |             3.77 |
++-------------+-----------------------------+-------------+---------------------+----------------------+------------------+
+40 rows in set
+
+Query OK, 0 rows affected
+
+--------------
+CALL sp_r12_parques_sobre_promedio_general('2025-01-01', '2025-12-31')
+--------------
+
++-------------------+-------------+------------+-------------------------------+--------------------------+
+| parque            | excursiones | visitantes | promedio_visitantes_excursion | promedio_general_parques |
++-------------------+-------------+------------+-------------------------------+--------------------------+
+| Torres del Paine  |           5 |         58 |                         11.60 |                     5.18 |
+| Nahuelbuta        |           3 |         26 |                          8.67 |                     5.18 |
+| Huerquehue        |           1 |          8 |                          8.00 |                     5.18 |
+| Puyehue           |           4 |         30 |                          7.50 |                     5.18 |
+| Conguillío        |           5 |         31 |                          6.20 |                     5.18 |
+| Radal Siete Tazas |           3 |         18 |                          6.00 |                     5.18 |
+| Villarrica        |          13 |         76 |                          5.85 |                     5.18 |
++-------------------+-------------+------------+-------------------------------+--------------------------+
+7 rows in set
+
+Query OK, 0 rows affected
+
+--------------
+CALL sp_r1_areas_mas_visitantes('2025-12-31', '2025-01-01')
+--------------
+
+ERROR 1644 (45000) at line 126: Período inválido: fecha inicio debe ser <= fecha término
+--------------
+CALL sp_r10_especies_sobre_promedio_tipo('HONGO')
+--------------
+
+ERROR 1644 (45000) at line 127: Tipo inválido: use VEGETAL, ANIMAL, MINERAL o SIN_CLASIFICAR
+Bye

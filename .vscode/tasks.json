@@ -1,0 +1,12 @@
+{
+  // Menú Terminal > Run Task... (Ejecutar tarea) en el Codespace
+  "version": "2.0.0",
+  "tasks": [
+    { "label": "1 · Abrir / reiniciar la aplicación (puerto 8501)", "type": "shell", "command": "bash scripts/iniciar_app.sh", "problemMatcher": [] },
+    { "label": "2 · Consola MySQL (parques_db)", "type": "shell", "command": "bash scripts/consola_mysql.sh", "problemMatcher": [] },
+    { "label": "3 · Ejecutar R1-R12 en la terminal", "type": "shell", "command": "bash scripts/consola_mysql.sh -t < sql/06_requerimientos_R1_R12.sql", "problemMatcher": [] },
+    { "label": "4 · Pruebas: SQL + pytest (evidencias)", "type": "shell", "command": "bash scripts/probar_todo.sh", "problemMatcher": [] },
+    { "label": "5 · Reconstruir la base desde cero (borra cambios)", "type": "shell", "command": "bash scripts/reconstruir_base.sh", "problemMatcher": [] },
+    { "label": "6 · Encender MySQL", "type": "shell", "command": "bash scripts/encender_mysql.sh", "problemMatcher": [] }
+  ]
+}

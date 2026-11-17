@@ -1,0 +1,50 @@
+# Evidencia 01 · Reconstrucción desde cero con el script integral (2026-11-11 01:36:18)
+MySQL 8.0.46-0ubuntu0.24.04.4
+$ mysql -u root -p < sql/00_integral.sql
+Script integral ejecutado sin errores.
+
+Objetos creados en parques_db:
++--------------------------+----+
+| objeto                   | n  |
++--------------------------+----+
+| Tablas                   | 24 |
+| Vistas                   |  6 |
+| Procedimientos           |  6 |
+| Triggers                 |  8 |
+| Restricción PRIMARY KEY  | 24 |
+| Restricción FOREIGN KEY  | 28 |
+| Restricción CHECK        | 35 |
+| Restricción UNIQUE       | 12 |
++--------------------------+----+
++---------------------------------+
+| vista                           |
++---------------------------------+
+| vw_r2_distribucion_especies     |
+| vw_r3_visitantes_vs_evaluacion  |
+| vw_r5_tasa_asistencia_area      |
+| vw_r6_especies_mayor_cantidad   |
+| vw_r7_proyectos_participacion   |
+| vw_r8_trabajadores_multifuncion |
++---------------------------------+
++-----------------------------------------+
+| procedimiento                           |
++-----------------------------------------+
+| sp_r10_especies_sobre_promedio_tipo     |
+| sp_r11_visitantes_destacados            |
+| sp_r12_parques_sobre_promedio_general   |
+| sp_r1_areas_mas_visitantes              |
+| sp_r4_parques_excursiones_visitantes    |
+| sp_r9_excursiones_sobre_promedio_parque |
++-----------------------------------------+
++------------------------+--------------------+--------------------+
+| TRIGGER_NAME           | EVENT_MANIPULATION | EVENT_OBJECT_TABLE |
++------------------------+--------------------+--------------------+
+| trg_insc_cupo_bi       | INSERT             | INSCRIPCION        |
+| trg_insc_estado_bu     | UPDATE             | INSCRIPCION        |
+| trg_eval_bi            | INSERT             | EVALUACION         |
+| trg_vegetal_disjunto   | INSERT             | VEGETAL            |
+| trg_animal_disjunto    | INSERT             | ANIMAL             |
+| trg_mineral_disjunto   | INSERT             | MINERAL            |
+| trg_trab_supervisor_bi | INSERT             | TRABAJADOR         |
+| trg_trab_supervisor_bu | UPDATE             | TRABAJADOR         |
++------------------------+--------------------+--------------------+
