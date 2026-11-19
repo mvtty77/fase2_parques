@@ -28,7 +28,7 @@ En la Fase 2 el equipo corrigió el MERE y el modelo relacional de Fase 1, imple
 
 | Componente | Herramienta | Archivo principal |
 |---|---|---|
-| MERE | ERDPlus | `docs/mere/correcciones_mere.md` · `[PENDIENTE: MERE_corregido.png]` |
+| MERE | ERDPlus | `docs/mere/correcciones_mere.md` · `docs/mere/MERE_corregido.png` |
 | Modelo relacional | MySQL Workbench | `docs/workbench/` |
 | Motor | MySQL 8.0 | `sql/00_integral.sql` |
 | Generación de datos | Python 3.12 + Faker | `scripts/generar_datos.py` |
@@ -57,7 +57,9 @@ Se mantienen las 16 reglas de Fase 1. Las correcciones agregan reglas que la Fas
 
 ## 4. MERE definitivo
 
-`[PENDIENTE: insertar imagen legible del MERE corregido en ERDPlus — docs/mere/MERE_corregido.png]`
+![MERE corregido](mere/MERE_corregido.png)
+
+*MERE corregido. En naranjo, los elementos nuevos o modificados en Fase 2 (C1, C2, C3 y C8).*
 
 El MERE conserva las 15 entidades de Fase 1: siete regulares (PERSONA, CUENTA, REGION, PARQUE, EXCURSION, PROYECTO_CIENTIFICO y RECURSO_NATURAL), AREA como entidad débil de PARQUE, INSCRIPCION como asociativa, EVALUACION dependiente de EXCURSION y cinco subtipos (TRABAJADOR y VISITANTE de PERSONA, con especialización **total y solapada**; VEGETAL, ANIMAL y MINERAL de RECURSO_NATURAL, con especialización **parcial y disjunta**).
 
@@ -70,7 +72,9 @@ El MERE conserva las 15 entidades de Fase 1: siete regulares (PERSONA, CUENTA, R
 
 ## 5. Modelo relacional final modelado en MySQL Workbench
 
-`[PENDIENTE: insertar imagen del diagrama EER obtenido con Reverse Engineer — docs/workbench/modelo_relacional_final.png]` (procedimiento en `docs/workbench/instrucciones_workbench.md`).
+![Modelo relacional final](workbench/modelo_relacional_fase2.png)
+
+*Modelo relacional final: 24 tablas y 28 claves foráneas, generado desde `sql/01_estructura.sql`.*
 
 El modelo tiene **24 tablas**: las 23 de Fase 1 más `ASIGNACION_TRABAJADOR`. Las claves compuestas de PARQUE `(anio_declaracion, nro_correlativo)` y AREA `(anio_declaracion, nro_correlativo, nro_area)` se referencian completas en EXCURSION, INVENTARIO_RECURSO, ESTUDIA, ASIGNACION_TRABAJADOR y PARQUE_REGION.
 
@@ -121,7 +125,23 @@ Otras tablas: PERSONA 288, PERSONA_TELEFONO 312, TRABAJADOR_FUNCION 85, ASIGNACI
 
 **Validación.** `sql/05_pruebas.sql` comprueba conteos, especializaciones y 11 pruebas negativas que deben fallar con el error esperado (CHECK 3819, FK 1452/1451, UNIQUE 1062 y SIGNAL 1644 de los triggers), más una inscripción de prueba revertida con ROLLBACK.
 
-`[PENDIENTE: captura de Workbench con el conteo por tabla y 2–3 pruebas negativas — docs/evidencias/wb_conteos.png, wb_pruebas_negativas.png]`
+![Conteo por tabla](evidencias/wb_conteos_1.jpg)
+
+![Conteo por tabla (continuación)](evidencias/wb_conteos_2.jpg)
+
+*Conteo por tabla en MySQL Workbench, dentro de los rangos del PDF.*
+
+![B1](evidencias/wb_prueba_B1_check.jpg)
+
+*B1: una calificación 7 es rechazada por `ck_eval_calificacion` (error 3819).*
+
+![B3](evidencias/wb_prueba_B3_unique.jpg)
+
+*B3: inscribir dos veces al mismo visitante en la misma excursión es rechazado por `uq_insc_visitante_excursion` (error 1062).*
+
+![B4](evidencias/wb_prueba_B4_trigger_cupo.jpg)
+
+*B4: el trigger `trg_insc_cupo_bi` rechaza una inscripción en una excursión sin cupo (error 1644).*
 
 ## 7. Requerimientos de información
 
@@ -170,7 +190,9 @@ DELIMITER ;
 CALL sp_r1_areas_mas_visitantes('2025-01-01', '2025-12-31');
 ```
 
-**Captura de la salida en MySQL Workbench:** `[PENDIENTE: insertar docs/evidencias/wb_R1.png]`
+**Captura de la salida en MySQL Workbench:** 
+
+![Salida R1 en Workbench](evidencias/wb_R01.png)
 
 Salida de referencia obtenida al validar el script (primeras 10 de 30 filas; comparar con la captura):
 
@@ -232,7 +254,9 @@ GROUP BY p.anio_declaracion, p.nro_correlativo, p.nombre,
 SELECT * FROM vw_r2_distribucion_especies ORDER BY parque, area, tipo_especie;
 ```
 
-**Captura de la salida en MySQL Workbench:** `[PENDIENTE: insertar docs/evidencias/wb_R2.png]`
+**Captura de la salida en MySQL Workbench:** 
+
+![Salida R2 en Workbench](evidencias/wb_R02.png)
 
 Salida de referencia obtenida al validar el script (primeras 10 de 167 filas; comparar con la captura):
 
@@ -291,7 +315,9 @@ WHERE e.fecha <= CURDATE();
 SELECT * FROM vw_r3_visitantes_vs_evaluacion ORDER BY cantidad_participantes DESC;
 ```
 
-**Captura de la salida en MySQL Workbench:** `[PENDIENTE: insertar docs/evidencias/wb_R3.png]`
+**Captura de la salida en MySQL Workbench:** 
+
+![Salida R3 en Workbench](evidencias/wb_R03.png)
 
 Salida de referencia obtenida al validar el script (primeras 10 de 182 filas; comparar con la captura):
 
@@ -351,7 +377,9 @@ DELIMITER ;
 CALL sp_r4_parques_excursiones_visitantes('2025-01-01', '2025-12-31');
 ```
 
-**Captura de la salida en MySQL Workbench:** `[PENDIENTE: insertar docs/evidencias/wb_R4.png]`
+**Captura de la salida en MySQL Workbench:** 
+
+![Salida R4 en Workbench](evidencias/wb_R04.png)
 
 Salida de referencia obtenida al validar el script (primeras 10 de 15 filas; comparar con la captura):
 
@@ -405,7 +433,9 @@ GROUP BY p.anio_declaracion, p.nro_correlativo, p.nombre, a.nro_area, a.nombre;
 SELECT * FROM vw_r5_tasa_asistencia_area WHERE inscripciones >= 10 ORDER BY porcentaje_asistencia DESC;
 ```
 
-**Captura de la salida en MySQL Workbench:** `[PENDIENTE: insertar docs/evidencias/wb_R5.png]`
+**Captura de la salida en MySQL Workbench:** 
+
+![Salida R5 en Workbench](evidencias/wb_R05.png)
 
 Salida de referencia obtenida al validar el script (primeras 10 de 29 filas; comparar con la captura):
 
@@ -460,7 +490,9 @@ WHERE rn.activo = TRUE;
 SELECT * FROM vw_r6_especies_mayor_cantidad WHERE ranking_en_area = 1 ORDER BY parque, area;
 ```
 
-**Captura de la salida en MySQL Workbench:** `[PENDIENTE: insertar docs/evidencias/wb_R6.png]`
+**Captura de la salida en MySQL Workbench:** 
+
+![Salida R6 en Workbench](evidencias/wb_R06.png)
 
 Salida de referencia obtenida al validar el script (primeras 10 de 49 filas; comparar con la captura):
 
@@ -512,7 +544,9 @@ HAVING COUNT(DISTINCT pp.rut_persona) >= 2
 SELECT * FROM vw_r7_proyectos_participacion ORDER BY investigadores DESC, especies_estudiadas DESC;
 ```
 
-**Captura de la salida en MySQL Workbench:** `[PENDIENTE: insertar docs/evidencias/wb_R7.png]`
+**Captura de la salida en MySQL Workbench:** 
+
+![Salida R7 en Workbench](evidencias/wb_R07.png)
 
 Salida de referencia obtenida al validar el script (primeras 10 de 25 filas; comparar con la captura):
 
@@ -570,7 +604,9 @@ HAVING COUNT(DISTINCT tf.funcion) > 1;
 SELECT * FROM vw_r8_trabajadores_multifuncion ORDER BY cantidad_funciones DESC, trabajador;
 ```
 
-**Captura de la salida en MySQL Workbench:** `[PENDIENTE: insertar docs/evidencias/wb_R8.png]`
+**Captura de la salida en MySQL Workbench:** 
+
+![Salida R8 en Workbench](evidencias/wb_R08.png)
 
 Salida de referencia obtenida al validar el script (primeras 10 de 29 filas; comparar con la captura):
 
@@ -650,7 +686,9 @@ DELIMITER ;
 CALL sp_r9_excursiones_sobre_promedio_parque(1959, 1, '2024-01-01', '2026-11-10');
 ```
 
-**Captura de la salida en MySQL Workbench:** `[PENDIENTE: insertar docs/evidencias/wb_R9.png]`
+**Captura de la salida en MySQL Workbench:** 
+
+![Salida R9 en Workbench](evidencias/wb_R09.png)
 
 Salida de referencia obtenida al validar el script (primeras 3 de 3 filas; comparar con la captura):
 
@@ -719,7 +757,9 @@ DELIMITER ;
 CALL sp_r10_especies_sobre_promedio_tipo('ANIMAL');
 ```
 
-**Captura de la salida en MySQL Workbench:** `[PENDIENTE: insertar docs/evidencias/wb_R10.png]`
+**Captura de la salida en MySQL Workbench:** 
+
+![Salida R10 en Workbench](evidencias/wb_R10.png)
 
 Salida de referencia obtenida al validar el script (primeras 10 de 11 filas; comparar con la captura):
 
@@ -800,7 +840,9 @@ DELIMITER ;
 CALL sp_r11_visitantes_destacados('2024-01-01', '2026-11-10');
 ```
 
-**Captura de la salida en MySQL Workbench:** `[PENDIENTE: insertar docs/evidencias/wb_R11.png]`
+**Captura de la salida en MySQL Workbench:** 
+
+![Salida R11 en Workbench](evidencias/wb_R11.png)
 
 Salida de referencia obtenida al validar el script (primeras 10 de 40 filas; comparar con la captura):
 
@@ -887,7 +929,9 @@ DELIMITER ;
 CALL sp_r12_parques_sobre_promedio_general('2025-01-01', '2025-12-31');
 ```
 
-**Captura de la salida en MySQL Workbench:** `[PENDIENTE: insertar docs/evidencias/wb_R12.png]`
+**Captura de la salida en MySQL Workbench:** 
+
+![Salida R12 en Workbench](evidencias/wb_R12.png)
 
 Salida de referencia obtenida al validar el script (primeras 7 de 7 filas; comparar con la captura):
 
@@ -991,7 +1035,7 @@ ORDER BY ocupacion_pct;
 
 ## 9. Evidencias en imágenes del formulario, CRUD, usuarios y dashboard
 
-Capturas tomadas con la aplicación real en ejecución, conectada a `parques_db`, durante la validación (Chromium sin interfaz, 1440 px de ancho). Las operaciones de prueba se revirtieron después de capturarlas. `[PENDIENTE: el equipo debe repetirlas en su propio equipo, idealmente desde el Codespace, y reemplazarlas o confirmarlas.]`
+Capturas de la aplicación en ejecución, conectada a `parques_db` con los datos de la semilla (1440 px de ancho). Las operaciones de prueba se revirtieron después de capturarlas.
 
 ### 9.1 Inicio de sesión y formulario transaccional
 
@@ -1003,91 +1047,87 @@ Capturas tomadas con la aplicación real en ejecución, conectada a `parques_db`
 
 *Figura 2. Contraseña incorrecta: acceso rechazado.*
 
-![Figura 3. Formulario transaccional (rol OPERADOR): excursión con cupos libres y ocupación, búsqueda de visitante y estado de asistencia.](evidencias/pmv_03_operador_formulario_inscripcion.png)
+![Figura 3. Inicio (rol OPERADOR): resumen general y próximas excursiones.](evidencias/pmv_03_operador_inicio.png)
 
-*Figura 3. Formulario transaccional (rol OPERADOR): excursión con cupos libres y ocupación, búsqueda de visitante y estado de asistencia.*
+*Figura 3. Inicio (rol OPERADOR): resumen general y próximas excursiones.*
 
-![Figura 4. Inscripción registrada (COMMIT): la ocupación pasa de 9 a 10 de 21.](evidencias/pmv_04_inscripcion_exitosa.png)
+![Figura 4. Formulario transaccional en tres pasos: excursión con cupos libres, visitante y confirmación.](evidencias/pmv_04_inscripcion_formulario.png)
 
-*Figura 4. Inscripción registrada (COMMIT): la ocupación pasa de 9 a 10 de 21.*
+*Figura 4. Formulario transaccional en tres pasos: excursión con cupos libres, visitante y confirmación.*
 
-![Figura 5. El mismo visitante en la misma excursión es rechazado (regla 7, sin escribir en la base).](evidencias/pmv_05_inscripcion_duplicada_rechazada.png)
+![Figura 5. Inscripción registrada (COMMIT) y cupo actualizado.](evidencias/pmv_05_inscripcion_exitosa.png)
 
-*Figura 5. El mismo visitante en la misma excursión es rechazado (regla 7, sin escribir en la base).*
+*Figura 5. Inscripción registrada (COMMIT) y cupo actualizado.*
 
-![Figura 6. Registro de asistencia de una excursión realizada (actualización transaccional).](evidencias/pmv_06_registrar_asistencia.png)
+![Figura 6. El mismo visitante en la misma excursión es rechazado (regla 7, sin escribir en la base).](evidencias/pmv_06_inscripcion_duplicada_rechazada.png)
 
-*Figura 6. Registro de asistencia de una excursión realizada (actualización transaccional).*
+*Figura 6. El mismo visitante en la misma excursión es rechazado (regla 7, sin escribir en la base).*
+
+![Figura 7. Registro de asistencia de una excursión realizada (actualización transaccional).](evidencias/pmv_07_registrar_asistencia.png)
+
+*Figura 7. Registro de asistencia de una excursión realizada (actualización transaccional).*
 
 ### 9.2 CRUD de tablas maestras
 
-![Figura 7. CRUD Parque: consulta y formulario de creación (parque + región principal + primera área).](evidencias/pmv_07_crud_parques_lista.png)
+![Figura 8. CRUD Parque: creación (parque, región principal y primera área).](evidencias/pmv_08_crud_parques_crear.png)
 
-*Figura 7. CRUD Parque: consulta y formulario de creación (parque + región principal + primera área).*
+*Figura 8. CRUD Parque: creación (parque, región principal y primera área).*
 
-![Figura 8. CRUD Parque: un parque con historial se desactiva (eliminación lógica) y deja de aparecer en la lista de activos.](evidencias/pmv_08_crud_parque_desactivacion_logica.png)
+![Figura 9. CRUD Parque: selección en la tabla y edición en el panel lateral.](evidencias/pmv_09_crud_parque_editar.png)
 
-*Figura 8. CRUD Parque: un parque con historial se desactiva (eliminación lógica) y deja de aparecer en la lista de activos.*
+*Figura 9. CRUD Parque: selección en la tabla y edición en el panel lateral.*
 
-![Figura 9. CRUD Especie: consulta con tipo, atributos del subtipo y registros de inventario.](evidencias/pmv_09_crud_especies_lista.png)
+![Figura 10. CRUD Parque: un parque con historial se desactiva (eliminación lógica).](evidencias/pmv_10_crud_parque_desactivacion_logica.png)
 
-*Figura 9. CRUD Especie: consulta con tipo, atributos del subtipo y registros de inventario.*
+*Figura 10. CRUD Parque: un parque con historial se desactiva (eliminación lógica).*
 
-![Figura 10. CRUD Especie: creación con subtipo (VEGETAL, ANIMAL, MINERAL o SIN_CLASIFICAR).](evidencias/pmv_10_crud_especie_formulario_crear.png)
+![Figura 11. CRUD Especie: creación con subtipo (VEGETAL, ANIMAL, MINERAL o SIN_CLASIFICAR).](evidencias/pmv_11_crud_especies_crear.png)
 
-*Figura 10. CRUD Especie: creación con subtipo (VEGETAL, ANIMAL, MINERAL o SIN_CLASIFICAR).*
+*Figura 11. CRUD Especie: creación con subtipo (VEGETAL, ANIMAL, MINERAL o SIN_CLASIFICAR).*
+
+![Figura 12. CRUD Especie: edición de una especie existente.](evidencias/pmv_12_crud_especie_editar.png)
+
+*Figura 12. CRUD Especie: edición de una especie existente.*
 
 ### 9.3 Usuarios y permisos por rol
 
-![Figura 11. Control de usuarios (solo ADMINISTRADOR): activar o desactivar cuentas y asignar roles.](evidencias/pmv_11_admin_usuarios_roles.png)
+![Figura 13. Control de usuarios (solo ADMINISTRADOR): activar o desactivar cuentas y asignar roles.](evidencias/pmv_13_usuarios_roles.png)
 
-*Figura 11. Control de usuarios (solo ADMINISTRADOR): activar o desactivar cuentas y asignar roles.*
+*Figura 13. Control de usuarios (solo ADMINISTRADOR): activar o desactivar cuentas y asignar roles.*
 
-![Figura 12. Rol OPERADOR: el menú solo ofrece Inscripciones y Dashboard.](evidencias/pmv_16_rol_operador_menu.png)
+![Figura 14. Rol ANALISTA: el menú no ofrece Inscripciones ni Usuarios.](evidencias/pmv_15_rol_analista_menu.png)
 
-*Figura 12. Rol OPERADOR: el menú solo ofrece Inscripciones y Dashboard.*
+*Figura 14. Rol ANALISTA: el menú no ofrece Inscripciones ni Usuarios.*
 
-![Figura 13. Rol ANALISTA: sin inscripciones; en Tablas maestras solo ve Especies.](evidencias/pmv_17_rol_analista_menu_y_crud.png)
+![Figura 15. Rol ANALISTA: en tablas maestras solo gestiona Especies.](evidencias/pmv_16_rol_analista_solo_especies.png)
 
-*Figura 13. Rol ANALISTA: sin inscripciones; en Tablas maestras solo ve Especies.*
+*Figura 15. Rol ANALISTA: en tablas maestras solo gestiona Especies.*
 
 ### 9.4 Dashboard
 
-![Figura 14. Dashboard P1: ranking de áreas por visitantes, con filtros de fecha y parque.](evidencias/pmv_12_dashboard_p1_areas_visitantes.png)
+![Figura 16. Dashboard con filtros: P1 áreas por visitantes, P2 composición de especies, P3 participantes vs. evaluación y P4 ocupación de la capacidad.](evidencias/pmv_14_dashboard.png)
 
-*Figura 14. Dashboard P1: ranking de áreas por visitantes, con filtros de fecha y parque.*
-
-![Figura 15. Dashboard P2: composición vegetal/animal/mineral/sin clasificar por parque, con filtros de parque y área.](evidencias/pmv_13_dashboard_p2_composicion_especies.png)
-
-*Figura 15. Dashboard P2: composición vegetal/animal/mineral/sin clasificar por parque, con filtros de parque y área.*
-
-![Figura 16. Dashboard P3: dispersión participantes vs. evaluación promedio, con tendencia (pendiente negativa).](evidencias/pmv_14_dashboard_p3_visitantes_vs_evaluacion.png)
-
-*Figura 16. Dashboard P3: dispersión participantes vs. evaluación promedio, con tendencia (pendiente negativa).*
-
-![Figura 17. Dashboard P4 (propuesta): ocupación de la capacidad por parque y modalidad; en rojo, donde sobran cupos.](evidencias/pmv_15_dashboard_p4_ocupacion_capacidad.png)
-
-*Figura 17. Dashboard P4 (propuesta): ocupación de la capacidad por parque y modalidad; en rojo, donde sobran cupos.*
+*Figura 16. Dashboard con filtros: P1 áreas por visitantes, P2 composición de especies, P3 participantes vs. evaluación y P4 ocupación de la capacidad.*
 
 ### 9.5 Apoyo con phpMyAdmin (opcional)
 
 phpMyAdmin se usó como apoyo para revisar la base con el usuario de la aplicación. **No reemplaza las capturas de MySQL Workbench** que exigen las secciones 5 y 7.
 
-![Figura 18. Estructura de parques_db: 24 tablas y 6 vistas.](evidencias/phpmyadmin_01_estructura_tablas_y_vistas.png)
+![Figura 17. Estructura de parques_db: 24 tablas y 6 vistas.](evidencias/phpmyadmin_01_estructura_tablas_y_vistas.png)
 
-*Figura 18. Estructura de parques_db: 24 tablas y 6 vistas.*
+*Figura 17. Estructura de parques_db: 24 tablas y 6 vistas.*
 
-![Figura 19. Los 6 procedimientos almacenados.](evidencias/phpmyadmin_02_procedimientos.png)
+![Figura 18. Los 6 procedimientos almacenados.](evidencias/phpmyadmin_02_procedimientos.png)
 
-*Figura 19. Los 6 procedimientos almacenados.*
+*Figura 18. Los 6 procedimientos almacenados.*
 
-![Figura 20. Ejecución de CALL sp_r12_parques_sobre_promedio_general.](evidencias/phpmyadmin_05_call_R12.png)
+![Figura 19. Ejecución de CALL sp_r12_parques_sobre_promedio_general.](evidencias/phpmyadmin_05_call_R12.png)
 
-*Figura 20. Ejecución de CALL sp_r12_parques_sobre_promedio_general.*
+*Figura 19. Ejecución de CALL sp_r12_parques_sobre_promedio_general.*
 
-![Figura 21. Una calificación 7 es rechazada por el CHECK ck_eval_calificacion.](evidencias/phpmyadmin_07_check_calificacion_rechazado.png)
+![Figura 20. Una calificación 7 es rechazada por el CHECK ck_eval_calificacion.](evidencias/phpmyadmin_07_check_calificacion_rechazado.png)
 
-*Figura 21. Una calificación 7 es rechazada por el CHECK ck_eval_calificacion.*
+*Figura 20. Una calificación 7 es rechazada por el CHECK ck_eval_calificacion.*
 
 
 ## 10. Plan de responsabilidades y participación del equipo
@@ -1135,7 +1175,17 @@ docker compose ps               # db y app deben quedar "healthy"
 docker compose down -v          # detener y BORRAR la base (reconstruir desde cero)
 ```
 
-`[PENDIENTE: insertar capturas docs/evidencias/docker_*.png]`
+![Contenedores](evidencias/docker_01_contenedores.jpg)
+
+*Docker Desktop: contenedores `db`, `app` y `phpmyadmin` en ejecución.*
+
+![Log MySQL](evidencias/docker_02_mysql_logs.jpg)
+
+*Registro del contenedor de MySQL: scripts de inicialización ejecutados.*
+
+![Log app](evidencias/docker_03_app_logs.png)
+
+*Registro del contenedor de la aplicación: Streamlit escuchando en el puerto 8501.*
 
 **Alternativa de desarrollo:** el repositorio incluye también un GitHub Codespace (`.devcontainer/`) que instala MySQL 8 y Python, crea la base y abre la aplicación sin Docker.
 

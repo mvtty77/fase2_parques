@@ -1,6 +1,6 @@
 # Correcciones al MERE y al modelo relacional (Fase 1 → Fase 2)
 
-> **Pendiente del equipo:** dibujar el MERE corregido en **ERDPlus** a partir de este documento y guardar la imagen como `docs/mere/MERE_corregido.png`. El modelo de Fase 1 está en `docs/fase1/`.
+> El MERE corregido está en `docs/mere/MERE_corregido.png` (fuente editable: `MERE_corregido.dot`). El modelo de Fase 1 está en `docs/fase1/`.
 > **Pendiente:** si el docente entregó observaciones de Fase 1, agregarlas en `docs/fase1/observaciones_docente.md` y contrastarlas con esta lista. Las correcciones siguientes se derivan de los requisitos de Fase 2 (R1–R12 y PMV), no de observaciones recibidas.
 
 ## Resumen
