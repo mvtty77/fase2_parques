@@ -556,3 +556,35 @@ def dash_ocupacion_capacidad(sesion: Sesion, inicio: date, fin: date) -> pd.Data
          WHERE e.fecha BETWEEN :ini AND :fin AND e.fecha <= CURDATE()
          GROUP BY p.nombre, e.modalidad
          ORDER BY ocupacion_pct""", {"ini": inicio, "fin": fin})
+
+
+# ---------------------------------------------------------------------
+# Resumen para la portada (indicadores generales, sin permisos especiales)
+# ---------------------------------------------------------------------
+def resumen_general() -> dict:
+    """Totales simples para la portada y la pantalla de ingreso."""
+    df = consultar("""
+        SELECT (SELECT COUNT(*) FROM PARQUE WHERE activo)                                  AS parques,
+               (SELECT COUNT(*) FROM AREA a JOIN PARQUE p USING (anio_declaracion, nro_correlativo)
+                 WHERE p.activo)                                                          AS areas,
+               (SELECT COUNT(*) FROM RECURSO_NATURAL WHERE activo)                         AS especies,
+               (SELECT COUNT(*) FROM EXCURSION WHERE fecha >= CURDATE())                   AS excursiones_proximas,
+               (SELECT COUNT(*) FROM INSCRIPCION i JOIN EXCURSION e USING (codigo_excursion)
+                 WHERE i.estado_asistencia = 'ASISTIO' AND YEAR(e.fecha) = YEAR(CURDATE())) AS visitas_anio,
+               (SELECT ROUND(AVG(calificacion), 2) FROM EVALUACION)                        AS nota_promedio""")
+    return {k: (None if pd.isna(v) else v) for k, v in df.iloc[0].to_dict().items()}
+
+
+def proximas_excursiones(limite: int = 6) -> pd.DataFrame:
+    """Próximas excursiones con su ocupación, para la portada."""
+    return consultar("""
+        SELECT e.codigo_excursion, e.fecha, e.horario, e.modalidad, p.nombre AS parque, a.nombre AS area,
+               e.capacidad,
+               (SELECT COUNT(*) FROM INSCRIPCION i WHERE i.codigo_excursion = e.codigo_excursion) AS inscritos
+          FROM EXCURSION e
+          JOIN AREA a   ON a.anio_declaracion = e.anio_declaracion AND a.nro_correlativo = e.nro_correlativo
+                       AND a.nro_area = e.nro_area
+          JOIN PARQUE p ON p.anio_declaracion = a.anio_declaracion AND p.nro_correlativo = a.nro_correlativo
+         WHERE e.fecha >= CURDATE()
+         ORDER BY e.fecha, e.horario
+         LIMIT :lim""", {"lim": limite})

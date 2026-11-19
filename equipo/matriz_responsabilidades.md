@@ -18,7 +18,7 @@
 | Usuarios y roles | Esteban Gonzales | Carlos Vasconcellos | Funcionalidad integrada y prueba |
 | Dashboard | Francisca Perez | Matias Lagos | 4 visualizaciones integradas |
 | Integración y pruebas del PMV | Carlos Vasconcellos | Todos | PMV completo funcionando; `pytest` |
-| Codespace y despliegue | Matias Lagos | Gaspar Galaz | Codespace funcionando e instrucciones (README) |
+| Docker y despliegue | Matias Lagos | Gaspar Galaz | Contenedores e instrucciones (README) |
 | Integración del informe | Francisca Perez | Todos | Informe final y evidencias |
 
 ## Resumen por integrante
@@ -26,7 +26,7 @@
 | Integrante | Responsabilidades principales | Etapas |
 |---|---|---|
 | Carlos Vasconcellos | MERE · R7-R9 · Integración y pruebas PMV | Modelamiento, SQL, PMV |
-| Matias Lagos | R1-R3 · Formulario transaccional · Codespace | SQL, PMV, Despliegue |
+| Matias Lagos | R1-R3 · Formulario transaccional · Docker | SQL, PMV, Despliegue |
 | Esteban Gonzales | Poblamiento · R10-R12 · Usuarios y roles | Datos, SQL, PMV |
 | Gaspar Galaz | Modelo relacional · DDL · CRUD | Modelamiento, Implementación, PMV |
 | Francisca Perez | R4-R6 · Dashboard · Informe | SQL, PMV, Documentación |

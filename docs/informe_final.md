@@ -24,7 +24,7 @@
 
 El sistema organiza la información de parques naturales chilenos: sus áreas, la región donde se ubican, los recursos naturales (especies vegetales, animales y minerales) inventariados en cada área, el personal y sus funciones, los proyectos de investigación, y las excursiones con sus inscripciones y evaluaciones de visitantes.
 
-En la Fase 2 el equipo corrigió el MERE y el modelo relacional de Fase 1, implementó la base `parques_db` en MySQL 8 con 24 tablas, la pobló con datos sintéticos reproducibles, resolvió doce requerimientos de información con 6 vistas y 6 procedimientos almacenados, y construyó un PMV en Python/Streamlit conectado a la misma base, con formulario transaccional de inscripción, CRUD de parques y especies, inicio de sesión con tres roles y un dashboard de cuatro preguntas. Se ejecuta en GitHub Codespaces y en un PC con MySQL Workbench.
+En la Fase 2 el equipo corrigió el MERE y el modelo relacional de Fase 1, implementó la base `parques_db` en MySQL 8 con 24 tablas, la pobló con datos sintéticos reproducibles, resolvió doce requerimientos de información con 6 vistas y 6 procedimientos almacenados, y construyó un PMV en Python/Streamlit conectado a la misma base, con formulario transaccional de inscripción, CRUD de parques y especies, inicio de sesión con tres roles y un dashboard de cuatro preguntas. Se despliega con Docker Compose y también puede abrirse en GitHub Codespaces.
 
 | Componente | Herramienta | Archivo principal |
 |---|---|---|
@@ -34,7 +34,7 @@ En la Fase 2 el equipo corrigió el MERE y el modelo relacional de Fase 1, imple
 | Generación de datos | Python 3.12 + Faker | `scripts/generar_datos.py` |
 | Acceso a datos | SQLAlchemy + PyMySQL | `app/db.py` |
 | PMV | Streamlit + Pandas + Plotly | `app/main.py`, `app/negocio.py`, `app/seguridad.py` |
-| Despliegue | GitHub Codespaces (sin Docker Compose) | `.devcontainer/`, `scripts/` |
+| Despliegue | Docker + Docker Compose (y GitHub Codespaces para desarrollo) | `Dockerfile`, `docker-compose.yml`, `.devcontainer/` |
 | Asistente IA | OpenCode (obligatorio) | `docs/uso_ia_validacion.md` |
 
 ## 3. Correcciones a las reglas de negocio de la Fase 1
@@ -1109,31 +1109,35 @@ Propuesta **provisional** que cumple la sección 14 del PDF: cada integrante es 
 | Usuarios y roles | Esteban Gonzales | Carlos Vasconcellos | Funcionalidad integrada y prueba |
 | Dashboard | Francisca Perez | Matias Lagos | 4 visualizaciones integradas |
 | Integración y pruebas del PMV | Carlos Vasconcellos | Todos | PMV completo funcionando; `pytest` |
-| Codespace y despliegue | Matias Lagos | Gaspar Galaz | Codespace funcionando e instrucciones (README) |
+| Docker y despliegue | Matias Lagos | Gaspar Galaz | Contenedores e instrucciones (README) |
 | Integración del informe | Francisca Perez | Todos | Informe final y evidencias |
 
 ## 11. Bitácoras individuales
 
 Una por estudiante en `equipo/bitacoras/`. `[PENDIENTE: cada integrante registra sus actividades reales: fecha, actividad, etapa, evidencia, horas y resultado, más la síntesis final que pide la sección 15 del PDF. No se completan por adelantado.]`
 
-## 12. Despliegue
+## 12. Despliegue con Docker
 
-> `[PENDIENTE: el PDF (secciones 2, 10 y 12) pide despliegue con Docker. El grupo decidió trabajar sin Docker: GitHub Codespaces para desarrollar y MySQL Workbench en el PC para las evidencias. Confirmar con el docente si se acepta o si debe agregarse Docker.]`
+**Servicios** (`docker-compose.yml`):
 
-**Entorno 1 · GitHub Codespaces** (`.devcontainer/`). Al crear el Codespace, `instalar.sh` instala en Ubuntu 24.04 MySQL Server 8.0, Python 3.12 y las librerías de `requirements.txt`. Cada vez que se abre, `iniciar.sh` enciende MySQL, ejecuta `sql/00_integral.sql` si la base no existe, crea el usuario de la aplicación con los datos de `.env` (permisos solo sobre `parques_db`) y abre el PMV en el puerto 8501. Las consultas se ejecutan con la extensión SQLTools o con `bash scripts/consola_mysql.sh`.
-
-**Entorno 2 · PC con MySQL Workbench** (`docs/workbench/instrucciones_workbench.md`). Se instala MySQL Server 8 y Workbench, se ejecuta `sql/00_integral.sql`, se genera el diagrama EER con *Reverse Engineer* y se capturan R1–R12 con `sql/06_requerimientos_R1_R12.sql`.
+- `db` (imagen `mysql:8.0`): al primer arranque, con el volumen vacío, ejecuta `sql/00_integral.sql` desde `/docker-entrypoint-initdb.d/` y crea la base, las tablas, los datos, las vistas y los procedimientos. Expone el puerto 3307 del equipo para MySQL Workbench. Su healthcheck consulta `EVALUACION` por TCP, así que solo pasa cuando la carga terminó.
+- `app` (imagen construida con el `Dockerfile` sobre `python:3.12-slim`): instala `requirements.txt`, copia la aplicación, corre con un usuario sin privilegios y expone Streamlit en el puerto 8501. Espera a que `db` esté sano.
+- `phpmyadmin` (opcional): apoyo para revisar la base en el puerto 8090. No reemplaza a Workbench.
 
 Las credenciales viven en `.env`, que no se sube al repositorio; `.env.example` muestra el formato.
 
 ```bash
-# En el Codespace
-bash scripts/reconstruir_base.sh   # borra y crea parques_db desde cero (24 tablas, 6 vistas, 6 procedimientos, 8 triggers)
-bash scripts/probar_todo.sh        # pruebas SQL + 13 pruebas pytest, con salida en docs/evidencias/
-bash scripts/iniciar_app.sh        # abre o reinicia el PMV (puerto 8501)
+cp .env.example .env            # editar contraseñas
+docker compose up -d --build    # 1.ª vez: 1-2 min mientras se carga la base
+docker compose ps               # db y app deben quedar "healthy"
+# Navegador: http://localhost:8501   (usuario admin, contraseña Parques2026!)
+# Workbench: 127.0.0.1:3307 con DB_USER / DB_PASSWORD
+docker compose down -v          # detener y BORRAR la base (reconstruir desde cero)
 ```
 
-`[PENDIENTE: capturas del Codespace (terminal con "Listo", pestaña PUERTOS y la app abierta) y de Workbench con parques_db cargada.]`
+`[PENDIENTE: insertar capturas docs/evidencias/docker_*.png]`
+
+**Alternativa de desarrollo:** el repositorio incluye también un GitHub Codespace (`.devcontainer/`) que instala MySQL 8 y Python, crea la base y abre la aplicación sin Docker.
 
 ## 13. Conclusiones
 

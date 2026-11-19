@@ -1,0 +1,11 @@
+.env
+.git
+.venv
+venv
+__pycache__
+docs
+equipo
+*.md
+.devcontainer
+.vscode
+tests/__pycache__

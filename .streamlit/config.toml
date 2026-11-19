@@ -1,9 +1,12 @@
 [theme]
 base = "light"
-primaryColor = "#2F5D50"
-backgroundColor = "#F4F7F5"
-secondaryBackgroundColor = "#E2EBE6"
-textColor = "#1E2A26"
+primaryColor = "#C2662D"
+backgroundColor = "#FAF7F0"
+secondaryBackgroundColor = "#EFE6D6"
+textColor = "#22302A"
+headingFont = "serif"
+baseRadius = "0.7rem"
+borderColor = "#E3DACA"
 
 [server]
 headless = true

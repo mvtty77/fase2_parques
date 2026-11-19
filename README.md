@@ -4,7 +4,7 @@
 
 Base de datos **MySQL 8** (24 tablas, 6 vistas, 6 procedimientos, 8 triggers, datos sintéticos) y PMV en **Python 3.12 + Streamlit** con inscripción de visitantes, CRUD de parques y especies, inicio de sesión con roles y dashboard.
 
-Se trabaja en dos etapas, **sin Docker**:
+Se puede ejecutar de tres formas: **Docker Compose** (despliegue que pide el PDF), **GitHub Codespaces** o un PC con **MySQL Workbench**.
 
 | Etapa | Dónde | Para qué |
 |---|---|---|
@@ -29,6 +29,26 @@ MySQL 8 · parques_db ............... FK, UNIQUE, CHECK, triggers, vistas, proce
    │  mismo script sql/00_integral.sql
 MySQL Workbench (PC) ............... diagrama EER y capturas
 ```
+
+---
+
+## Despliegue con Docker Compose
+
+Requiere Docker Desktop. En la carpeta del repositorio:
+
+```bash
+cp .env.example .env             # Windows: copy .env.example .env  (cambiar contraseñas)
+docker compose up -d --build     # la primera vez carga la base (1-2 min)
+docker compose ps                # db y app en estado "healthy"
+```
+
+| Servicio | Dirección |
+|---|---|
+| Aplicación (PMV) | <http://localhost:8501> |
+| MySQL para Workbench | `127.0.0.1:3307`, usuario y contraseña de `.env` |
+| phpMyAdmin (apoyo opcional) | <http://localhost:8090> |
+
+`docker compose down -v` borra la base; el siguiente `up` la reconstruye desde `sql/00_integral.sql`.
 
 ---
 
@@ -125,7 +145,7 @@ equipo/                 matriz_responsabilidades.md, bitacoras/
 | Script integral SQL | `sql/00_integral.sql` |
 | Script de generación de datos | `scripts/generar_datos.py` (+ `sql/02_datos.sql`) |
 | Código fuente PMV | `app/`, `requirements.txt`, `.streamlit/` |
-| Docker | `[PENDIENTE: el PDF lo pide; este repositorio no usa Docker. Consultar al docente]` |
+| Docker | `Dockerfile`, `docker-compose.yml`, `.env.example` |
 | Documento disertación | `[PENDIENTE]` diapositivas según `docs/defensa.md` |
 
 ## Problemas frecuentes

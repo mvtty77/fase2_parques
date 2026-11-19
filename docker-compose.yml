@@ -1,0 +1,64 @@
+# Orquestación: MySQL 8 + PMV Streamlit · Caso 1 · Grupo 1
+# Uso:  cp .env.example .env   (editar contraseñas)
+#       docker compose up -d --build
+#       App:  http://localhost:8501   phpMyAdmin: http://localhost:8090   MySQL (Workbench): localhost:3307
+services:
+  db:
+    image: mysql:8.0
+    container_name: parques_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: parques_db
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      TZ: America/Santiago
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_spanish_ci"]
+    ports:
+      - "3307:3306"            # 3307 en el equipo para no chocar con un MySQL local
+    volumes:
+      - db_data:/var/lib/mysql
+      # Se ejecuta SOLO la primera vez (volumen vacío): crea BD, tablas, datos, vistas y procedimientos
+      - ./sql/00_integral.sql:/docker-entrypoint-initdb.d/00_integral.sql:ro
+    healthcheck:
+      # Por TCP: durante la carga inicial MySQL corre sin red, así que solo pasa
+      # cuando el script integral terminó y el servidor definitivo está arriba.
+      test: ["CMD-SHELL", "mysql -h 127.0.0.1 -u$${MYSQL_USER} -p$${MYSQL_PASSWORD} -e 'SELECT 1 FROM parques_db.EVALUACION LIMIT 1' parques_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+  app:
+    build: .
+    container_name: parques_app
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: parques_db
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      TZ: America/Santiago
+    ports:
+      - "8501:8501"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  phpmyadmin:
+    # Apoyo para revisar la base desde el navegador. NO reemplaza a MySQL Workbench.
+    image: phpmyadmin:5
+    container_name: parques_phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+    ports:
+      - "8090:80"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:
